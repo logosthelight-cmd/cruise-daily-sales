@@ -562,7 +562,11 @@ const fmtTs=(ts)=>ts?new Date(ts).toLocaleString('ko-KR',{year:'numeric',month:'
 const esc=(s)=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const today=()=>{const d=new Date();return iso(d);};
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v);}catch{return d;}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}},del(k){try{localStorage.removeItem(k);}catch{}}};
+const DEFAULT_URL='https://tyottfcnjevrvbngcwsw.supabase.co/functions/v1/daily-sales';
 let cfg=LS.get('dsCfg_v1',{url:'',key:'',name:''});
+if(!cfg.url)cfg.url=DEFAULT_URL;
+// 링크에 ?k=입력키 가 붙어 있으면 자동 저장 (직원은 이름만 입력하면 됨)
+try{const qs=new URLSearchParams(location.search);const qk=qs.get('k');if(qk){cfg.key=qk.trim();LS.set('dsCfg_v1',cfg);history.replaceState(null,'',location.pathname);}}catch{}
 let editKey=LS.get('dsEditKey_v1','');
 let deviceId=LS.get('dsDeviceId_v1','');if(!deviceId){deviceId=(crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random())).slice(0,32);LS.set('dsDeviceId_v1',deviceId);}
 let queue=LS.get('dsQueue_v1',[]);
@@ -793,7 +797,7 @@ $('#hLoad').onclick=async()=>{if(!editKey){if(!await askEditKey())return;}try{co
 
 /* ---------- 시작 ---------- */
 buildGrid();setRolePill();setQueuePill();
-(async()=>{if(cfg.url&&cfg.key){try{const j=await api('진단',{});formDays=j.formEditDays||3;}catch(e){toast(e.message,true);}await loadTags();flushQueue();loadDay();}else{renderTagPickers();fillForm(null);showTab('settings');$('#sMsg').textContent='서버 주소와 입력키를 입력한 뒤 저장하세요.';}})();
+(async()=>{if(cfg.url&&cfg.key){try{const j=await api('진단',{});formDays=j.formEditDays||3;}catch(e){toast(e.message,true);}await loadTags();flushQueue();loadDay();if(!cfg.name){showTab('settings');$('#sMsg').textContent='작성자 이름을 입력하고 "저장 후 연결 확인"을 눌러 주세요.';}}else{renderTagPickers();fillForm(null);showTab('settings');$('#sMsg').textContent=cfg.key?'작성자 이름을 입력한 뒤 저장하세요.':'입력키와 작성자 이름을 입력한 뒤 저장하세요. (서버 주소는 기본값 그대로)';}})();
 })();
 </script>
 </body>
