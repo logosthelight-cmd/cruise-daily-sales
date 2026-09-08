@@ -87,6 +87,13 @@ table{border-collapse:collapse;width:100%}
 .wl .ops{display:flex;gap:4px}
 .daylabel{font-weight:700;color:var(--navy);margin:10px 0 4px;font-size:13px}
 .notice{background:var(--sky100);border-radius:10px;padding:8px 12px;color:var(--navy);font-size:13px;margin-bottom:10px}
+.overlay{position:fixed;inset:0;background:rgba(14,33,64,.55);display:flex;align-items:center;justify-content:center;z-index:40;padding:16px}
+.overlay .box{background:#fff;border-radius:16px;padding:24px;width:100%;max-width:380px;box-shadow:0 10px 40px rgba(22,46,84,.35)}
+.overlay .box h2{font-size:18px;color:var(--navy);margin-bottom:4px}
+.overlay .box .sub{font-size:12px;color:var(--steel);margin-bottom:14px}
+.overlay label.f{margin-bottom:8px}
+.overlay input{width:100%}
+.err-msg{color:var(--red);font-size:12px;min-height:16px;margin:4px 0}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--navy-deep);color:#fff;padding:10px 18px;border-radius:9999px;font-weight:600;box-shadow:0 6px 20px rgba(22,46,84,.3);z-index:50;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw}
 .toast.show{opacity:1}
 .toast.err{background:var(--red)}
@@ -106,8 +113,9 @@ table{border-collapse:collapse;width:100%}
     <button data-tab="settings">설정</button>
   </nav>
   <div class="hstatus">
-    <span class="pill" id="pillRole">키 미설정</span>
+    <span class="pill" id="pillRole">로그인 필요</span>
     <span class="pill warn" id="pillQueue" hidden>미전송 0건</span>
+    <button class="btn sm" id="btnLogout" hidden>로그아웃</button>
   </div>
 </div></header>
 
@@ -124,7 +132,7 @@ table{border-collapse:collapse;width:100%}
         <span class="hint" id="dState"></span>
       </div>
       <div class="row">
-        <label class="f">작성자<input type="text" id="dName" placeholder="이름" style="width:110px"></label>
+        <span class="hint">작성자: <b id="dName"></b></span>
         <button class="btn primary" id="dSave">저장</button>
       </div>
     </div>
@@ -239,26 +247,37 @@ table{border-collapse:collapse;width:100%}
 <!-- ================= 설정 ================= -->
 <section class="tab" id="tab-settings">
   <div class="card">
-    <h2>연결 설정</h2>
+    <h2>내 계정</h2>
+    <div class="row"><span id="sMe" class="hint"></span></div>
+    <h3>비밀번호 변경</h3>
     <div class="row">
-      <label class="f grow">서버 주소 (Edge Function URL)<input type="text" id="sUrl" placeholder="https://tyottfcnjevrvbngcwsw.supabase.co/functions/v1/daily-sales"></label>
+      <label class="f">현재 비밀번호<input type="password" id="pwCur" autocomplete="current-password"></label>
+      <label class="f">새 비밀번호 (6자 이상)<input type="password" id="pwNew" autocomplete="new-password"></label>
+      <label class="f">새 비밀번호 확인<input type="password" id="pwNew2" autocomplete="new-password"></label>
+      <button class="btn primary sm" id="pwSave">변경</button>
     </div>
-    <div class="row" style="margin-top:8px">
-      <label class="f">입력키<input type="password" id="sKey" placeholder="전 직원 공통 입력키"></label>
-      <label class="f">작성자 이름<input type="text" id="sName"></label>
-      <button class="btn primary" id="sSave">저장 후 연결 확인</button>
-      <span class="hint" id="sMsg"></span>
-    </div>
-    <h3>수정키 (담당자)</h3>
+    <p class="hint">권한: 입력 = 당일(오늘 포함 최근 <b id="sDays">1</b>일) 입력·수정 + 전체 조회·엑셀 / 수정 = 모든 날짜 수정·삭제, 태그 편집, 수정 이력 / 관리 = 수정 + 사용자 관리.</p>
+    <details style="margin-top:8px"><summary class="hint">서버 주소 (고급)</summary>
+      <div class="row" style="margin-top:6px"><label class="f grow">Edge Function URL<input type="text" id="sUrl"></label><button class="btn sm" id="sSave">저장</button><span class="hint" id="sMsg"></span></div>
+    </details>
+  </div>
+  <div class="card" id="cardUsers" hidden>
+    <h2>사용자 관리 <span class="hint">(관리자)</span></h2>
+    <div class="tblwrap" id="uList"></div>
+    <h3>사용자 추가 / 수정</h3>
     <div class="row">
-      <span class="hint" id="sEditState"></span>
-      <button class="btn sm" id="sEditSet">수정키 입력</button>
-      <button class="btn sm" id="sEditClear">수정키 지우기</button>
+      <input type="hidden" id="uId">
+      <label class="f">이메일<input type="text" id="uEmail" style="width:200px"></label>
+      <label class="f">이름<input type="text" id="uName" style="width:110px"></label>
+      <label class="f">권한<select id="uRole"><option>입력</option><option>수정</option><option>관리</option></select></label>
+      <label class="f">초기 비밀번호<input type="text" id="uPw" placeholder="신규 필수 / 수정 시 비우면 유지" style="width:180px"></label>
+      <label class="hint" style="align-self:flex-end;padding-bottom:8px"><input type="checkbox" id="uActive" checked> 활성</label>
+      <button class="btn primary sm" id="uSave">저장</button><button class="btn sm" id="uReset">새로 입력</button>
     </div>
-    <p class="hint">입력키: 오늘 포함 최근 <b id="sDays">3</b>일 입력·수정, 전체 조회·엑셀. 수정키: 모든 날짜 수정·삭제, 태그 편집, 수정 이력.</p>
+    <p class="hint">초기 비밀번호로 처음 로그인하면 본인이 비밀번호를 바꾸도록 안내됩니다.</p>
   </div>
   <div class="card">
-    <h2>업무 태그 편집 <span class="hint">(수정키 필요)</span></h2>
+    <h2>업무 태그 편집 <span class="hint">(수정 권한)</span></h2>
     <div id="sTagList"></div>
     <div class="row" style="margin-top:8px">
       <input type="text" id="sTagNew" placeholder="새 태그 이름" style="width:160px">
@@ -271,14 +290,14 @@ table{border-collapse:collapse;width:100%}
     <h2>미전송 대기열</h2>
     <div id="sQueue" class="hint">없음</div>
     <div class="row" style="margin-top:8px"><button class="btn sm" id="sFlush">지금 재전송</button><button class="btn sm danger" id="sQueueClear">대기열 비우기</button></div>
-    <h3>수정 이력 <span class="hint">(수정키)</span></h3>
+    <h3>수정 이력 <span class="hint">(수정 권한)</span></h3>
     <div class="row"><label class="f">시작<input type="date" id="hFrom"></label><label class="f">종료<input type="date" id="hTo"></label><button class="btn sm" id="hLoad">조회</button></div>
     <div class="tblwrap" id="hList"></div>
   </div>
   <div class="card notes">
     <h2>집계 기준</h2>
     <ul>
-      <li>금액은 원 단위, VAT 포함. 인원은 항차별 일반·우대·무료·온라인 합계 + 항차 외 인원(대관 등).</li>
+      <li>금액은 원 단위, VAT 포함. 인원은 항차별 현장일반·현장우대·현장무료·온라인 합계 + 항차 외 인원(대관 등).</li>
       <li>주차 = 월요일~일요일. 주차 이름은 월요일이 속한 달 기준 "MM월 N주차" (N = 그 달의 N번째 월요일). 예) 2026-01-05~11 = 01월 1주차.</li>
       <li>탑승률: 주간 = 인원 ÷ (250명 × 7일), 월간 = 인원 ÷ (250명 × 해당 월 일수). 합계열은 ×5항차. (양식과 동일하게 미운항일도 분모에 포함)</li>
       <li>운항 매출 합계 = 항차 매출 + 기타 + 효정1호. 소매 = 선내 편의점 + 굿즈샵.</li>
@@ -286,6 +305,35 @@ table{border-collapse:collapse;width:100%}
   </div>
 </section>
 </main>
+<div class="overlay" id="loginOverlay" hidden>
+  <div class="box">
+    <div id="loginForm">
+      <h2>가평크루즈 일일매출</h2><div class="sub">이메일과 비밀번호로 로그인하세요.</div>
+      <label class="f">이메일<input type="email" id="lgEmail" autocomplete="username"></label>
+      <label class="f">비밀번호<input type="password" id="lgPw" autocomplete="current-password"></label>
+      <div class="err-msg" id="lgErr"></div>
+      <button class="btn primary" id="lgBtn" style="width:100%">로그인</button>
+      <div class="hint" style="margin-top:10px">계정이 없거나 비밀번호를 잊으면 관리자에게 문의하세요.</div>
+    </div>
+    <div id="setupForm" hidden>
+      <h2>초기 관리자 만들기</h2><div class="sub">아직 계정이 없습니다. 수정키를 아는 담당자가 첫 관리자 계정을 만듭니다.</div>
+      <label class="f">수정키 (EDIT_SECRET)<input type="password" id="suKey"></label>
+      <label class="f">이메일<input type="email" id="suEmail"></label>
+      <label class="f">이름<input type="text" id="suName"></label>
+      <label class="f">비밀번호 (6자 이상)<input type="password" id="suPw"></label>
+      <div class="err-msg" id="suErr"></div>
+      <button class="btn primary" id="suBtn" style="width:100%">관리자 계정 만들기</button>
+    </div>
+    <div id="mustPwForm" hidden>
+      <h2>비밀번호 변경</h2><div class="sub">초기 비밀번호로 로그인했습니다. 본인만 아는 비밀번호로 바꿔 주세요.</div>
+      <label class="f">현재(초기) 비밀번호<input type="password" id="mpCur"></label>
+      <label class="f">새 비밀번호 (6자 이상)<input type="password" id="mpNew"></label>
+      <label class="f">새 비밀번호 확인<input type="password" id="mpNew2"></label>
+      <div class="err-msg" id="mpErr"></div>
+      <button class="btn primary" id="mpBtn" style="width:100%">변경하고 시작</button>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script id="excel-builder">
@@ -563,33 +611,36 @@ const esc=(s)=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'
 const today=()=>{const d=new Date();return iso(d);};
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v);}catch{return d;}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}},del(k){try{localStorage.removeItem(k);}catch{}}};
 const DEFAULT_URL='https://tyottfcnjevrvbngcwsw.supabase.co/functions/v1/daily-sales';
-let cfg=LS.get('dsCfg_v1',{url:'',key:'',name:''});
+let cfg=LS.get('dsCfg_v2',{url:DEFAULT_URL});
 if(!cfg.url)cfg.url=DEFAULT_URL;
-// 링크에 ?k=입력키 가 붙어 있으면 자동 저장 (직원은 이름만 입력하면 됨)
-try{const qs=new URLSearchParams(location.search);const qk=qs.get('k');if(qk){cfg.key=qk.trim();LS.set('dsCfg_v1',cfg);history.replaceState(null,'',location.pathname);}}catch{}
-let editKey=LS.get('dsEditKey_v1','');
+let session=LS.get('dsSession_v1',null);   // {token,user:{id,email,name,role,must_change_pw}}
 let deviceId=LS.get('dsDeviceId_v1','');if(!deviceId){deviceId=(crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random())).slice(0,32);LS.set('dsDeviceId_v1',deviceId);}
 let queue=LS.get('dsQueue_v1',[]);
 let tags=[];            // {name,sort,color}
 const cache={};         // date -> row
 let worklogByDate={};   // date -> [items]
-let role='';let formDays=3;
+let formDays=1;
+const role=()=>session?session.user.role:'';const canEdit=()=>role()==='수정'||role()==='관리';const isAdmin=()=>role()==='관리';const myName=()=>session?session.user.name:'';
 
 function toast(msg,err){const t=$('#toast');t.textContent=msg;t.className='toast show'+(err?' err':'');clearTimeout(t._h);t._h=setTimeout(()=>t.className='toast',err?4500:2200);}
-function setRolePill(){const p=$('#pillRole');if(!cfg.url||!cfg.key){p.textContent='설정 필요';p.className='pill err';return;}p.textContent=editKey?'수정키 사용 중':(role?'입력키 · '+role:'입력키');p.className='pill '+(editKey?'warn':'ok');}
+function setRolePill(){const p=$('#pillRole');if(!session){p.textContent='로그인 필요';p.className='pill err';$('#btnLogout').hidden=true;$('#dName').textContent='';return;}p.textContent=`${session.user.name} · ${session.user.role}`;p.className='pill '+(canEdit()?'warn':'ok');$('#btnLogout').hidden=false;$('#dName').textContent=session.user.name;}
+function showLogin(mode){const ov=$('#loginOverlay');ov.hidden=false;$('#loginForm').hidden=mode!=='login';$('#setupForm').hidden=mode!=='setup';$('#mustPwForm').hidden=mode!=='mustpw';if(mode==='login')setTimeout(()=>$('#lgEmail').focus(),50);}
+function hideLogin(){$('#loginOverlay').hidden=true;}
+function setSession(tok,user){session={token:tok,user};LS.set('dsSession_v1',session);setRolePill();}
+function clearSession(){session=null;LS.del('dsSession_v1');setRolePill();}
 function setQueuePill(){const p=$('#pillQueue');p.hidden=!queue.length;p.textContent=`미전송 ${queue.length}건`;LS.set('dsQueue_v1',queue);renderQueue();}
 
 /* ---------- API ---------- */
 async function api(op,payload,opts){opts=opts||{};
-  if(!cfg.url||!cfg.key)throw new Error('설정 탭에서 서버 주소와 입력키를 먼저 저장하세요.');
-  const key=(opts.edit&&editKey)?editKey:(editKey||cfg.key);
-  const ctrl=new AbortController();const tm=setTimeout(()=>ctrl.abort(),opts.timeout||15000);
-  let r;try{r=await fetch(cfg.url+'?k='+encodeURIComponent(key),{method:'POST',body:JSON.stringify({작업:op,...payload}),headers:{'Content-Type':'text/plain'},signal:ctrl.signal});}
+  if(!cfg.url)throw new Error('서버 주소가 없습니다.');
+  const ctrl=new AbortController();const tm=setTimeout(()=>ctrl.abort(),opts.timeout||20000);
+  const url=cfg.url+(opts.key?'?k='+encodeURIComponent(opts.key):'');
+  let r;try{r=await fetch(url,{method:'POST',body:JSON.stringify({작업:op,세션:session?session.token:undefined,...payload}),headers:{'Content-Type':'text/plain'},signal:ctrl.signal});}
   catch(e){clearTimeout(tm);throw new Error('서버 연결 실패 ('+(e.name==='AbortError'?'시간 초과':'네트워크')+')');}
   clearTimeout(tm);
   let j;try{j=await r.json();}catch{throw new Error('서버 응답 오류 '+r.status);}
-  if(!j.ok){const e=new Error(j.error||('오류 '+r.status));e.status=r.status;throw e;}
-  role=j.권한||role;setRolePill();return j;
+  if(!j.ok){if(j.login&&!opts.noLoginRedirect){clearSession();showLogin('login');$('#lgErr').textContent=j.error||'';}const e=new Error(j.error||('오류 '+r.status));e.status=r.status;throw e;}
+  if(j.user&&session){session.user=j.user;LS.set('dsSession_v1',session);}if(j.formEditDays)formDays=j.formEditDays;return j;
 }
 
 /* ---------- 대기열 (저장 실패 시 보관 → 재전송) ---------- */
@@ -621,7 +672,7 @@ function showTab(t){$$('nav button').forEach(b=>b.classList.toggle('on',b.datase
   if(t==='week')renderWeek();if(t==='month')renderMonth();if(t==='settings')renderSettings();if(t==='log'&&!$('#lList').innerHTML)searchLog();}
 
 /* ============ 일일 입력 ============ */
-const dDate=$('#dDate');dDate.value=today();$('#dName').value=cfg.name||'';
+const dDate=$('#dDate');dDate.value=today();
 function buildGrid(){const tb=$('#dBody');tb.innerHTML='';
   for(let v=1;v<=5;v++){const tr=document.createElement('tr');tr.innerHTML=`<td class="c"><b>${v}항차</b><div class="hint">${['10:00','11:20','13:30','14:50','16:10'][v-1]}</div></td>
    <td><select data-f="v${v}_status"><option>운항</option><option>미운항</option><option>결항</option></select></td>
@@ -650,12 +701,10 @@ async function loadDay(){const d=dDate.value;if(!d)return;$('#dLock').hidden=tru
   try{if(!cache[d]||!worklogByDate[d])await loadRange(d,d);}catch(e){toast(e.message,true);}
   fillForm(cache[d]);renderWorklog();
   const ago=Math.round((Date.parse(today())-Date.parse(d))/86400000);
-  if(role!=='수정'&&(ago<0||ago>=formDays)){$('#dLock').hidden=false;$('#dLock').textContent=ago<0?'미래 날짜는 입력할 수 없습니다.':`이 날짜는 입력키로 수정할 수 없습니다 (오늘 포함 최근 ${formDays}일만 가능). 수정하려면 설정에서 수정키를 입력하세요.`;}
+  if(!canEdit()&&(ago<0||ago>=formDays)){$('#dLock').hidden=false;$('#dLock').textContent=ago<0?'미래 날짜는 입력할 수 없습니다.':`'입력' 권한은 ${formDays===1?'당일':'오늘 포함 최근 '+formDays+'일'}만 입력·수정할 수 있습니다. 이 날짜의 수정은 '수정' 권한자에게 요청하세요.`;}
   $('#dState').textContent=cache[d]?`저장됨 (${fmtTs(cache[d].updated_at)} ${cache[d].updated_by||''})`:'미입력';}
 dDate.onchange=loadDay;$('#dPrev').onclick=()=>{dDate.value=addDays(dDate.value,-1);loadDay();};$('#dNext').onclick=()=>{dDate.value=addDays(dDate.value,1);loadDay();};$('#dToday').onclick=()=>{dDate.value=today();loadDay();};
-async function saveDay(){const row=readForm();row.updated_by=$('#dName').value.trim()||cfg.name||null;row.device_id=deviceId;
-  if(!row.updated_by){toast('작성자 이름을 입력하세요.',true);$('#dName').focus();return;}
-  if(cfg.name!==row.updated_by){cfg.name=row.updated_by;LS.set('dsCfg_v1',cfg);}
+async function saveDay(){if(!session){showLogin('login');return;}const row=readForm();row.updated_by=myName();row.device_id=deviceId;
   const btns=[$('#dSave'),$('#dSave2')];btns.forEach(b=>b.disabled=true);
   try{const j=await api('일일저장',{row});cache[row.sales_date]=j.row;toast('저장되었습니다.');$('#dState').textContent=`저장됨 (${fmtTs(j.row.updated_at)} ${j.row.updated_by||''})`;}
   catch(e){if(e.status===403||e.status===400){toast(e.message,true);}else{enqueue('일일저장',{row});toast('서버 연결 실패 → 대기열에 보관했습니다 (자동 재전송).',true);}}
@@ -674,11 +723,11 @@ function renderWorklog(){const d=dDate.value;const items=worklogByDate[d]||[];co
   el.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{if(!confirm('이 항목을 삭제할까요?'))return;try{await api('업무삭제',{id:+b.dataset.del});worklogByDate[d]=items.filter(x=>x.id!==+b.dataset.del);renderWorklog();toast('삭제됨');}catch(e){toast(e.message,true);}});
   el.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{const it=items.find(x=>x.id===+b.dataset.edit);$('#wlText').value=it.content;pickedTags=new Set(it.tags||[]);renderTagPickers();$('#wlAdd').textContent='수정 저장';$('#wlAdd').dataset.editId=it.id;$('#wlText').focus();});}
 $('#wlAdd').onclick=async()=>{const d=dDate.value;const text=$('#wlText').value.trim();if(!text){toast('내용을 입력하세요.',true);return;}
-  const by=$('#dName').value.trim()||cfg.name||null;if(!by){toast('작성자 이름을 입력하세요.',true);$('#dName').focus();return;}
+  if(!session){showLogin('login');return;}
   const editId=$('#wlAdd').dataset.editId?+$('#wlAdd').dataset.editId:null;
   const parts=(!editId&&$('#wlSplit').checked)?text.split(/\n+/).map(s=>s.trim()).filter(Boolean):[text];
   try{const base=(worklogByDate[d]||[]).length;
-    for(let i=0;i<parts.length;i++){const j=await api('업무저장',{id:editId,sales_date:d,content:parts[i],tags:[...pickedTags],seq:editId?undefined:base+i,updated_by:by,device_id:deviceId});
+    for(let i=0;i<parts.length;i++){const j=await api('업무저장',{id:editId,sales_date:d,content:parts[i],tags:[...pickedTags],seq:editId?undefined:base+i,device_id:deviceId});
       worklogByDate[d]=worklogByDate[d]||[];if(editId){worklogByDate[d]=worklogByDate[d].map(x=>x.id===editId?j.item:x);}else worklogByDate[d].push(j.item);}
     $('#wlText').value='';pickedTags=new Set();renderTagPickers();$('#wlAdd').textContent='항목 추가';delete $('#wlAdd').dataset.editId;renderWorklog();toast(editId?'수정됨':'추가됨');}
   catch(e){toast(e.message,true);}};
@@ -775,8 +824,9 @@ $('#lCsv').onclick=()=>{if(!logItems.length){toast('먼저 조회하세요.',tru
 
 /* ============ 설정 ============ */
 let tagDraft=[];
-function renderSettings(){$('#sUrl').value=cfg.url||'';$('#sKey').value=cfg.key||'';$('#sName').value=cfg.name||'';$('#sDays').textContent=formDays;
-  $('#sEditState').textContent=editKey?'수정키 저장됨 (이 PC)':'수정키 없음';
+function renderSettings(){$('#sUrl').value=cfg.url||'';$('#sDays').textContent=formDays;
+  $('#sMe').textContent=session?`${session.user.name} (${session.user.email}) · 권한: ${session.user.role}`:'로그인 필요';
+  $('#cardUsers').hidden=!isAdmin();if(isAdmin())loadUsers();
   tagDraft=tags.map(t=>({...t}));renderTagDraft();renderQueue();
   if(!$('#hFrom').value){$('#hFrom').value=addDays(today(),-7);$('#hTo').value=today();}}
 function renderTagDraft(){$('#sTagList').innerHTML=tagDraft.map((t,i)=>`<div class="row" style="margin:3px 0"><span class="tag" style="background:${esc(t.color)}">${esc(t.name)}</span><input type="color" value="${esc(t.color)}" data-ti="${i}"><button class="btn sm" data-up="${i}">▲</button><button class="btn sm" data-dn="${i}">▼</button><button class="btn sm danger" data-rm="${i}">삭제</button></div>`).join('');
@@ -785,19 +835,45 @@ function renderTagDraft(){$('#sTagList').innerHTML=tagDraft.map((t,i)=>`<div cla
   $$('#sTagList [data-dn]').forEach(el=>el.onclick=()=>{const i=+el.dataset.dn;if(i<tagDraft.length-1){[tagDraft[i+1],tagDraft[i]]=[tagDraft[i],tagDraft[i+1]];renderTagDraft();}});
   $$('#sTagList [data-rm]').forEach(el=>el.onclick=()=>{tagDraft.splice(+el.dataset.rm,1);renderTagDraft();});}
 $('#sTagAdd').onclick=()=>{const n=$('#sTagNew').value.trim();if(!n)return;if(tagDraft.some(t=>t.name===n)){toast('이미 있는 태그',true);return;}tagDraft.push({name:n,color:$('#sTagColor').value});$('#sTagNew').value='';renderTagDraft();};
-$('#sTagSave').onclick=async()=>{if(!editKey){if(!await askEditKey())return;}try{const j=await api('태그저장',{tags:tagDraft},{edit:true});tags=j.tags;renderTagPickers();toast('태그 저장됨');}catch(e){toast(e.message,true);}};
-$('#sSave').onclick=async()=>{cfg={url:$('#sUrl').value.trim().replace(/\/$/,''),key:$('#sKey').value.trim(),name:$('#sName').value.trim()};LS.set('dsCfg_v1',cfg);$('#dName').value=cfg.name;setRolePill();
-  $('#sMsg').textContent='확인 중…';try{const j=await api('진단',{});formDays=j.formEditDays||3;$('#sDays').textContent=formDays;$('#sMsg').textContent=`연결 성공 · ${j.version} · 권한: ${j.권한}`;await loadTags();flushQueue();loadDay();}catch(e){$('#sMsg').textContent='실패: '+e.message;}};
-async function askEditKey(){const k=prompt('수정키를 입력하세요');if(!k)return false;const old=editKey;editKey=k.trim();try{const j=await api('진단',{},{edit:true});if(j.권한!=='수정'){editKey=old;toast('수정키가 아닙니다.',true);return false;}LS.set('dsEditKey_v1',editKey);setRolePill();$('#sEditState').textContent='수정키 저장됨 (이 PC)';toast('수정키 확인됨');return true;}catch(e){editKey=old;toast(e.message,true);return false;}}
-$('#sEditSet').onclick=askEditKey;$('#sEditClear').onclick=()=>{editKey='';LS.del('dsEditKey_v1');setRolePill();$('#sEditState').textContent='수정키 없음';role='';};
+$('#sTagSave').onclick=async()=>{if(!canEdit()){toast("태그 편집은 '수정' 권한이 필요합니다.",true);return;}try{const j=await api('태그저장',{tags:tagDraft});tags=j.tags;renderTagPickers();toast('태그 저장됨');}catch(e){toast(e.message,true);}};
+$('#sSave').onclick=async()=>{cfg={url:$('#sUrl').value.trim().replace(/\/$/,'')||DEFAULT_URL};LS.set('dsCfg_v2',cfg);$('#sMsg').textContent='확인 중…';try{const j=await api('진단',{});$('#sMsg').textContent=`연결 성공 · ${j.version}`;}catch(e){$('#sMsg').textContent='실패: '+e.message;}};
+$('#pwSave').onclick=async()=>{const c=$('#pwCur').value,n=$('#pwNew').value,n2=$('#pwNew2').value;if(n.length<6){toast('새 비밀번호는 6자 이상',true);return;}if(n!==n2){toast('새 비밀번호 확인이 다릅니다.',true);return;}
+  try{await api('비밀번호변경',{current:c,next:n});$('#pwCur').value=$('#pwNew').value=$('#pwNew2').value='';toast('비밀번호가 변경되었습니다.');}catch(e){toast(e.message,true);}};
+/* 사용자 관리 */
+let users=[];
+async function loadUsers(){try{const j=await api('사용자목록',{});users=j.users;renderUsers();}catch(e){toast(e.message,true);}}
+function renderUsers(){$('#uList').innerHTML=`<table class="tbl"><thead><tr><th>이메일</th><th>이름</th><th>권한</th><th>상태</th><th>최근 로그인</th><th></th></tr></thead><tbody>`+users.map(u=>`<tr><td class="l">${esc(u.email)}</td><td class="c">${esc(u.name)}</td><td class="c">${esc(u.role)}</td><td class="c">${u.active?'활성':'<span style="color:var(--red)">비활성</span>'}${u.must_change_pw?' <span class="hint">(초기비번)</span>':''}</td><td class="c">${esc(fmtTs(u.last_login_at))}</td><td class="c"><button class="btn sm" data-uedit="${u.id}">수정</button> ${u.id!==session.user.id?`<button class="btn sm danger" data-udel="${u.id}">삭제</button>`:''}</td></tr>`).join('')+'</tbody></table>';
+  $$('#uList [data-uedit]').forEach(b=>b.onclick=()=>{const u=users.find(x=>x.id===+b.dataset.uedit);$('#uId').value=u.id;$('#uEmail').value=u.email;$('#uName').value=u.name;$('#uRole').value=u.role;$('#uActive').checked=u.active;$('#uPw').value='';$('#uEmail').focus();});
+  $$('#uList [data-udel]').forEach(b=>b.onclick=async()=>{const u=users.find(x=>x.id===+b.dataset.udel);if(!confirm(`${u.name}(${u.email}) 계정을 삭제할까요?`))return;try{await api('사용자삭제',{id:u.id});toast('삭제됨');loadUsers();}catch(e){toast(e.message,true);}});}
+$('#uReset').onclick=()=>{$('#uId').value='';$('#uEmail').value='';$('#uName').value='';$('#uRole').value='입력';$('#uActive').checked=true;$('#uPw').value='';};
+$('#uSave').onclick=async()=>{const id=$('#uId').value?+$('#uId').value:undefined;const pw=$('#uPw').value;
+  if(!id&&pw.length<6){toast('신규 사용자는 초기 비밀번호(6자 이상)가 필요합니다.',true);return;}
+  try{await api('사용자저장',{id,email:$('#uEmail').value.trim(),name:$('#uName').value.trim(),role:$('#uRole').value,active:$('#uActive').checked,password:pw||undefined});toast(id?'수정됨':'추가됨');$('#uReset').click();loadUsers();}catch(e){toast(e.message,true);}};
 $('#sFlush').onclick=flushQueue;$('#sQueueClear').onclick=()=>{if(confirm('대기열의 미전송 데이터를 모두 버릴까요?')){queue=[];setQueuePill();}};
-$('#hLoad').onclick=async()=>{if(!editKey){if(!await askEditKey())return;}try{const j=await api('이력',{from:$('#hFrom').value,to:$('#hTo').value},{edit:true});
+$('#hLoad').onclick=async()=>{if(!canEdit()){toast("이력 조회는 '수정' 권한이 필요합니다.",true);return;}try{const j=await api('이력',{from:$('#hFrom').value,to:$('#hTo').value});
   $('#hList').innerHTML=`<table class="tbl"><thead><tr><th>시각</th><th>대상</th><th>작업</th><th>키</th><th class="l">변경 전 → 후 (요약)</th></tr></thead><tbody>`+j.items.map(it=>{const o=it.old_row||{},n=it.new_row||{};const diff=Object.keys({...o,...n}).filter(k=>!['updated_at','updated_by','device_id','created_at'].includes(k)&&JSON.stringify(o[k])!==JSON.stringify(n[k])).map(k=>`${k}: ${esc(JSON.stringify(o[k]))}→${esc(JSON.stringify(n[k]))}`).join(', ');
     return `<tr><td class="c">${esc(fmtTs(it.logged_at))}</td><td class="c">${esc(it.table_name)}</td><td class="c">${esc(it.op)}</td><td class="c">${esc(it.row_key)}</td><td class="l" style="white-space:normal;font-size:12px">${it.op==='DELETE'?'삭제: '+esc(o.content||o.sales_date||''):diff}</td></tr>`;}).join('')+'</tbody></table>'||'<div class="hint">이력 없음</div>';}catch(e){toast(e.message,true);}};
 
-/* ---------- 시작 ---------- */
-buildGrid();setRolePill();setQueuePill();
-(async()=>{if(cfg.url&&cfg.key){try{const j=await api('진단',{});formDays=j.formEditDays||3;}catch(e){toast(e.message,true);}await loadTags();flushQueue();loadDay();if(!cfg.name){showTab('settings');$('#sMsg').textContent='작성자 이름을 입력하고 "저장 후 연결 확인"을 눌러 주세요.';}}else{renderTagPickers();fillForm(null);showTab('settings');$('#sMsg').textContent=cfg.key?'작성자 이름을 입력한 뒤 저장하세요.':'입력키와 작성자 이름을 입력한 뒤 저장하세요. (서버 주소는 기본값 그대로)';}})();
+/* ---------- 로그인 / 시작 ---------- */
+$('#btnLogout').onclick=()=>{if(queue.length&&!confirm('미전송 데이터가 있습니다. 그래도 로그아웃할까요?'))return;clearSession();showLogin('login');};
+$('#lgBtn').onclick=async()=>{$('#lgErr').textContent='';const email=$('#lgEmail').value.trim(),pw=$('#lgPw').value;if(!email||!pw){$('#lgErr').textContent='이메일과 비밀번호를 입력하세요.';return;}
+  $('#lgBtn').disabled=true;try{const j=await api('로그인',{email,password:pw},{noLoginRedirect:true});setSession(j.token,j.user);$('#lgPw').value='';if(j.user.must_change_pw){showLogin('mustpw');}else{hideLogin();await afterLogin();}}
+  catch(e){$('#lgErr').textContent=e.message;}$('#lgBtn').disabled=false;};
+$('#lgPw').addEventListener('keydown',e=>{if(e.key==='Enter')$('#lgBtn').click();});
+$('#suBtn').onclick=async()=>{$('#suErr').textContent='';const key=$('#suKey').value.trim();if(!key){$('#suErr').textContent='수정키를 입력하세요.';return;}
+  try{const j=await api('초기설정',{email:$('#suEmail').value.trim(),name:$('#suName').value.trim(),password:$('#suPw').value},{key,noLoginRedirect:true});setSession(j.token,j.user);hideLogin();toast('관리자 계정이 만들어졌습니다.');await afterLogin();}
+  catch(e){$('#suErr').textContent=e.message;}};
+$('#mpBtn').onclick=async()=>{$('#mpErr').textContent='';const c=$('#mpCur').value,n=$('#mpNew').value,n2=$('#mpNew2').value;if(n.length<6){$('#mpErr').textContent='새 비밀번호는 6자 이상';return;}if(n!==n2){$('#mpErr').textContent='새 비밀번호 확인이 다릅니다.';return;}
+  try{await api('비밀번호변경',{current:c,next:n});session.user.must_change_pw=false;LS.set('dsSession_v1',session);$('#mpCur').value=$('#mpNew').value=$('#mpNew2').value='';hideLogin();toast('비밀번호가 변경되었습니다.');await afterLogin();}
+  catch(e){$('#mpErr').textContent=e.message;}};
+async function afterLogin(){setRolePill();await loadTags();flushQueue();showTab('daily');loadDay();}
+buildGrid();setRolePill();setQueuePill();renderTagPickers();fillForm(null);
+(async()=>{
+  let diag=null;try{diag=await api('진단',{},{noLoginRedirect:true});formDays=diag.formEditDays||1;}catch(e){toast(e.message,true);}
+  if(diag&&diag.setupNeeded){showLogin('setup');return;}
+  if(session){try{const j=await api('내정보',{},{noLoginRedirect:true});session.user=j.user;LS.set('dsSession_v1',session);if(j.user.must_change_pw){showLogin('mustpw');return;}await afterLogin();return;}catch(e){if(e.status===401)clearSession();else{toast(e.message,true);setRolePill();loadDay();return;}}}
+  showLogin('login');
+})();
 })();
 </script>
 </body>
