@@ -70,6 +70,9 @@ table{border-collapse:collapse;width:100%}
 .tbl input[type=text]{text-align:left}
 .tbl select{text-align:center}
 .tbl td.calc{background:var(--soft);color:var(--slate);font-weight:600}
+.tbl tr.noshow td{background:#FFF8E6}
+.itbl{max-width:720px}.itbl th{font-size:12px}.itbl input{width:100%}
+.ref-note{font-size:12px;color:var(--steel);margin:-4px 0 6px}
 .tblwrap{overflow-x:auto}
 .kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:8px 0}
 .kpi div{background:var(--soft);border:1px solid var(--hair-soft);border-radius:12px;padding:10px 12px}
@@ -149,16 +152,24 @@ table{border-collapse:collapse;width:100%}
       </tfoot>
     </table>
     </div>
+    <h3>참고 항목 <span class="hint">(매출·인원 모두 항차 매출·인원에 이미 포함 — 합계에 더하지 않음)</span></h3>
+    <div class="tblwrap"><table class="tbl itbl" id="itGroup"><thead><tr><th class="l" style="width:90px">단체</th><th class="l">단체명</th><th style="width:140px">매출액</th><th style="width:90px">인원</th><th style="width:50px"></th></tr></thead><tbody></tbody>
+      <tfoot><tr><td colspan="5" class="l"><button class="btn sm" data-add="단체">＋ 단체 추가</button></td></tr></tfoot></table></div>
+    <div class="tblwrap"><table class="tbl itbl" id="itRental"><thead><tr><th class="l" style="width:90px">대관</th><th class="l">단체명</th><th style="width:140px">매출액</th><th style="width:90px">인원</th><th style="width:50px"></th></tr></thead><tbody></tbody>
+      <tfoot><tr><td colspan="5" class="l"><button class="btn sm" data-add="대관">＋ 대관 추가</button></td></tr></tfoot></table></div>
+    <div class="tblwrap"><table class="tbl itbl" id="itNight"><thead><tr><th class="l" style="width:90px">야간운항</th><th class="l">이벤트명</th><th style="width:140px">매출액</th><th style="width:90px">인원</th><th style="width:50px"></th></tr></thead>
+      <tbody><tr><td class="c hint">1</td><td><input type="text" data-it="야간운항" data-k="name" placeholder="예) 달빛투어"></td><td><input type="number" min="0" step="1" data-it="야간운항" data-k="amount"></td><td><input type="number" min="0" step="1" data-it="야간운항" data-k="qty"></td><td></td></tr></tbody></table></div>
+    <div class="tblwrap"><table class="tbl itbl" id="itVoucher"><thead><tr><th class="l" style="width:90px">상품권</th><th class="l">비고 (선택)</th><th style="width:140px">매출액</th><th style="width:90px">사용 매수</th><th style="width:50px"></th></tr></thead><tbody></tbody>
+      <tfoot><tr><td colspan="5" class="l"><button class="btn sm" data-add="상품권">＋ 상품권 추가</button></td></tr></tfoot></table></div>
     <h3>일 단위 항목 (원, VAT포함)</h3>
     <div class="tblwrap">
     <table class="tbl" style="max-width:820px">
-      <tr><th class="l" style="width:230px">기타 (대관, 달빛투어, 상품권 등)</th><td><input type="number" id="fEtc" min="0" step="1"></td>
-          <th class="l" style="width:150px">효정1호 매출</th><td><input type="number" id="fHyo" min="0" step="1"></td></tr>
+      <tr><th class="l" style="width:150px">효정1호 매출</th><td><input type="number" id="fHyo" min="0" step="1"></td>
+          <th class="l" style="width:150px">포스상 인원 (선택)</th><td><input type="number" id="fPosPax" min="0" step="1" placeholder="비우면 미기재"></td></tr>
       <tr><th class="l">선내 편의점 매출</th><td><input type="number" id="fCvs" min="0" step="1"></td>
           <th class="l">굿즈샵 매출</th><td><input type="number" id="fGoods" min="0" step="1"></td></tr>
-      <tr><th class="l">항차 외 인원 (대관 등, 명)</th><td><input type="number" id="fExtraPax" min="0" step="1"></td>
-          <th class="l">포스상 인원 (선택)</th><td><input type="number" id="fPosPax" min="0" step="1" placeholder="비우면 미기재"></td></tr>
-      <tr><th class="l">항차 외 인원 메모</th><td colspan="3"><input type="text" id="fExtraNote" placeholder="예) 1항차 대관 충주강사협회 197명" style="width:100%"></td></tr>
+      <tr><th class="l">기타 매출액</th><td><input type="number" id="fEtc" min="0" step="1"></td>
+          <th class="l">기타 비고</th><td><input type="text" id="fEtcNote" placeholder="예) 상품권 판매, 촬영 협조" style="width:100%"></td></tr>
       <tr><th class="l">일 메모</th><td colspan="3"><input type="text" id="fMemo" placeholder="자유 메모" style="width:100%"></td></tr>
     </table>
     </div>
@@ -166,7 +177,7 @@ table{border-collapse:collapse;width:100%}
       <div><small>운항 매출 합계</small><b class="num" id="kOps">0</b></div>
       <div><small>소매 매출 합계</small><b class="num" id="kRetail">0</b></div>
       <div><small>매출 합계 (운항+소매)</small><b class="num" id="kTotal">0</b></div>
-      <div><small>탑승 인원 (항차+항차 외)</small><b class="num" id="kPax">0</b></div>
+      <div><small>탑승 인원 (항차 합계)</small><b class="num" id="kPax">0</b></div>
     </div>
     <div class="row" style="justify-content:flex-end"><button class="btn primary" id="dSave2">저장</button></div>
   </div>
@@ -300,7 +311,8 @@ table{border-collapse:collapse;width:100%}
       <li>금액은 원 단위, VAT 포함. 인원은 항차별 현장일반·현장우대·현장무료·온라인 합계 + 항차 외 인원(대관 등).</li>
       <li>주차 = 월요일~일요일. 주차 이름은 월요일이 속한 달 기준 "MM월 N주차" (N = 그 달의 N번째 월요일). 예) 2026-01-05~11 = 01월 1주차.</li>
       <li>탑승률: 주간 = 인원 ÷ (250명 × 7일), 월간 = 인원 ÷ (250명 × 해당 월 일수). 합계열은 ×5항차. (양식과 동일하게 미운항일도 분모에 포함)</li>
-      <li>운항 매출 합계 = 항차 매출 + 기타 + 효정1호. 소매 = 선내 편의점 + 굿즈샵.</li>
+      <li>운항 매출 합계 = 항차 매출 + 노쇼 + 기타 + 효정1호. 소매 = 선내 편의점 + 굿즈샵.</li>
+      <li>단체·대관·야간운항·상품권은 참고 항목: 매출·인원이 항차 매출·인원에 이미 포함되어 있어 합계에 더하지 않음. 노쇼 인원도 합계(명)에 미포함.</li>
     </ul>
   </div>
 </section>
@@ -361,7 +373,9 @@ function mondayOf(isoStr){const d=d2(isoStr);const k=(d.getDay()+6)%7;d.setDate(
 function weekLabel(monday){const d=d2(monday);return `${String(d.getMonth()+1).padStart(2,'0')}월${Math.ceil(d.getDate()/7)}주차`;}
 function weekFile(monday){const d=d2(monday);return `${String(d.getFullYear()).slice(2)}.${String(d.getMonth()+1).padStart(2,'0')}${Math.ceil(d.getDate()/7)}주차_주간매출.xlsx`;}
 function emptyRow(date){const r={sales_date:date};for(let v=1;v<=5;v++){PAX.forEach(k=>r[`v${v}_${k}`]=0);r[`v${v}_rev`]=0;r[`v${v}_status`]='운항';r[`v${v}_note`]=null;}
-  r.etc_rev=0;r.hyojeong_rev=0;r.cvs_rev=0;r.goods_rev=0;r.extra_pax=0;r.extra_pax_note=null;r.pos_pax=null;r.memo=null;return r;}
+  r.etc_rev=0;r.hyojeong_rev=0;r.cvs_rev=0;r.goods_rev=0;r.extra_pax=0;r.extra_pax_note=null;r.pos_pax=null;r.memo=null;r.noshow_rev=0;r.noshow_pax=0;r.etc_note=null;r.items=[];return r;}
+const KINDS=['단체','대관','야간운항','상품권'];const QTY_LABEL={단체:'명',대관:'명',야간운항:'명',상품권:'매'};
+function itemsByKind(rows){const o={};KINDS.forEach(k=>o[k]={n:0,amount:0,qty:0,names:[]});rows.forEach(r=>(r.items||[]).forEach(it=>{const b=o[it.kind];if(!b)return;b.n++;b.amount+=Number(it.amount||0);b.qty+=Number(it.qty||0);if(it.name)b.names.push(it.name);}));return o;}
 function daysInMonth(ym){const [y,m]=ym.split('-').map(Number);return new Date(y,m,0).getDate();}
 
 function setCell(ws,ref,val,opt){const c=ws.getCell(ref);if(val!==undefined)c.value=val;if(opt){if(opt.font)c.font=opt.font;if(opt.align)c.alignment=opt.align;if(opt.nf)c.numFmt=opt.nf;if(opt.border)c.border=opt.border;if(opt.fill)c.fill=opt.fill;}return c;}
@@ -369,16 +383,23 @@ function box(ws,range,border){ // 범위 전체 셀에 테두리
   const m=range.match(/([A-Z]+)(\d+):([A-Z]+)(\d+)/);const c1=m[1].charCodeAt(0),c2=m[3].charCodeAt(0);
   for(let r=+m[2];r<=+m[4];r++)for(let c=c1;c<=c2;c++)ws.getCell(String.fromCharCode(c)+r).border=border;}
 
-/* ---------- 일별 시트 (원본 260105 시트 구조) ---------- */
+/* ---------- 일별 시트 (원본 260105 구조 + 노쇼·참고 항목 행) ---------- */
+// 행 배치: 5~8 인원 · 9 합계 · 10 탑승률 · 11 크루즈 매출 · 12 노쇼 · 13 단체(참고) · 14 대관(참고) · 15 야간운항(참고) · 16 상품권(참고)
+//          17 기타 · 18 효정1호 · 19 운항 매출 합계 · 20 편의점 · 21 굿즈샵 · 22 소매 합계 · 23 매출 합계
+const REF_ROWS=[[13,'단체'],[14,'대관'],[15,'야간운항'],[16,'상품권']];
+function refLine(ws,r,label,amount,qty,qtyLabel,bold){
+  setCell(ws,`B${r}`,label,{font:fnt(10,bold),align:CENTER});
+  ws.mergeCells(`C${r}:F${r}`);setCell(ws,`C${r}`,amount,{font:fnt(10,bold),nf:NUM,align:RIGHTV});
+  ws.mergeCells(`G${r}:H${r}`);setCell(ws,`G${r}`,qty,{font:fnt(10,bold),nf:`#,##0"${qtyLabel}"`,align:RIGHTV});}
 function buildDaySheet(wb,row){
   const ws=wb.addWorksheet(sheetName(row.sales_date));
-  ws.columns=[{width:5},{width:20.6},{width:11.6},{width:11.6},{width:11.6},{width:11.6},{width:11.6},{width:16},{width:3},{width:30}];
-  [30,30,null,39.9,39.9,39.9,39.9,39.9,39.9,39.9,39.75,39.75,39.75,39.75,30,30,39.9,60.75].forEach((h,i)=>{if(h)ws.getRow(i+1).height=h;});
+  ws.columns=[{width:5},{width:20.6},{width:11.6},{width:11.6},{width:11.6},{width:11.6},{width:11.6},{width:16},{width:3},{width:34}];
+  ws.getRow(1).height=30;ws.getRow(2).height=30;for(let r=4;r<=19;r++)ws.getRow(r).height=30;ws.getRow(20).height=26;ws.getRow(21).height=26;ws.getRow(22).height=30;ws.getRow(23).height=48;
   ws.mergeCells('A1:H2');setCell(ws,'A1',kdate(row.sales_date),{font:fnt(20),align:CENTER});
   ws.mergeCells('A4:B4');setCell(ws,'A4','구 분',{font:fnt(11),align:CENTER});
   COLS.forEach((c,i)=>setCell(ws,`${c}4`,`${i+1}항차`,{font:fnt(11),align:CENTER}));
   setCell(ws,'H4','합계',{font:fnt(11),align:CENTER});
-  ws.mergeCells('A5:A14');setCell(ws,'A5','운 항',{font:fnt(11),align:CENTER});
+  ws.mergeCells('A5:A19');setCell(ws,'A5','운 항',{font:fnt(11),align:CENTER});
   PAX.forEach((k,i)=>{const r=5+i;setCell(ws,`B${r}`,PAX_LABEL[k],{font:fnt(10),align:CENTER});
     COLS.forEach((c,v)=>setCell(ws,`${c}${r}`,row[`v${v+1}_${k}`]||0,{font:fnt(10),align:RIGHTV}));
     setCell(ws,`H${r}`,{formula:`C${r}+D${r}+E${r}+F${r}+G${r}`},{font:fnt(10),align:RIGHTV});});
@@ -391,53 +412,79 @@ function buildDaySheet(wb,row){
   setCell(ws,'B11','가평크루즈 매출',{font:fnt(10),align:CENTER});
   COLS.forEach((c,v)=>setCell(ws,`${c}11`,row[`v${v+1}_rev`]||0,{font:fnt(10),nf:NUM,align:RIGHTV}));
   setCell(ws,'H11',{formula:'C11+D11+E11+F11+G11'},{font:fnt(10,true),nf:NUM_,align:RIGHTV});
-  setCell(ws,'B12','기타\n(대관, 달빛투어, 상품권 등)',{font:fnt(10),align:{...CENTER,wrapText:true}});
-  ws.mergeCells('C12:H12');setCell(ws,'C12',row.etc_rev||0,{font:fnt(10),nf:NUM,align:RIGHTV});
-  setCell(ws,'B13','효정1호 매출',{font:fnt(10),align:CENTER});
-  ws.mergeCells('C13:H13');setCell(ws,'C13',row.hyojeong_rev||0,{font:fnt(10),nf:NUM,align:RIGHTV});
-  setCell(ws,'B14','운항 매출 합계',{font:fnt(11,true),align:CENTER});
-  ws.mergeCells('C14:H14');setCell(ws,'C14',{formula:'H11+C13+C12'},{font:fnt(11,true),nf:NUM,align:RIGHTV});
-  ws.mergeCells('A15:A17');setCell(ws,'A15','소 매',{font:fnt(11),align:CENTER});
-  setCell(ws,'B15','선내 편의점 매출',{font:fnt(10),align:CENTER});ws.mergeCells('C15:H15');setCell(ws,'C15',row.cvs_rev||0,{font:fnt(10),nf:NUM_,align:RIGHTV});
-  setCell(ws,'B16','굿즈샵 매출',{font:fnt(10),align:CENTER});ws.mergeCells('C16:H16');setCell(ws,'C16',row.goods_rev||0,{font:fnt(10),nf:NUM_,align:RIGHTV});
-  setCell(ws,'B17','소매 매출 합계',{font:fnt(11,true),align:CENTER});ws.mergeCells('C17:H17');setCell(ws,'C17',{formula:'C15+C16'},{font:fnt(11,true),nf:NUM_,align:RIGHTV});
-  ws.mergeCells('A18:B18');setCell(ws,'A18','매출 합계(운항+소매)',{font:fnt(11,true),align:CENTER});
-  ws.mergeCells('C18:H18');setCell(ws,'C18',{formula:'C14+C17'},{font:fnt(14,true),nf:NUM_,align:RIGHTV});
-  box(ws,'A4:H18',all(thin));
-  ['A15','B15','C15'].forEach(r=>ws.getCell(r).border={...all(thin),top:med});
-  ['A18','B18','C18'].forEach(r=>ws.getCell(r).border={...all(thin),top:med});
-  // 비고 (J열): 항차 비고, 항차 외 인원, 메모
+  refLine(ws,12,'노쇼',row.noshow_rev||0,row.noshow_pax||0,'명');
+  const ib=itemsByKind([row]);
+  REF_ROWS.forEach(([r,k])=>refLine(ws,r,`${k}(참고)`,ib[k].amount,ib[k].qty,QTY_LABEL[k]));
+  setCell(ws,'B17','기타',{font:fnt(10),align:CENTER});ws.mergeCells('C17:H17');setCell(ws,'C17',row.etc_rev||0,{font:fnt(10),nf:NUM,align:RIGHTV});
+  setCell(ws,'B18','효정1호 매출',{font:fnt(10),align:CENTER});ws.mergeCells('C18:H18');setCell(ws,'C18',row.hyojeong_rev||0,{font:fnt(10),nf:NUM,align:RIGHTV});
+  setCell(ws,'B19','운항 매출 합계',{font:fnt(11,true),align:CENTER});ws.mergeCells('C19:H19');setCell(ws,'C19',{formula:'H11+C12+C17+C18'},{font:fnt(11,true),nf:NUM,align:RIGHTV});
+  ws.mergeCells('A20:A22');setCell(ws,'A20','소 매',{font:fnt(11),align:CENTER});
+  setCell(ws,'B20','선내 편의점 매출',{font:fnt(10),align:CENTER});ws.mergeCells('C20:H20');setCell(ws,'C20',row.cvs_rev||0,{font:fnt(10),nf:NUM_,align:RIGHTV});
+  setCell(ws,'B21','굿즈샵 매출',{font:fnt(10),align:CENTER});ws.mergeCells('C21:H21');setCell(ws,'C21',row.goods_rev||0,{font:fnt(10),nf:NUM_,align:RIGHTV});
+  setCell(ws,'B22','소매 매출 합계',{font:fnt(11,true),align:CENTER});ws.mergeCells('C22:H22');setCell(ws,'C22',{formula:'C20+C21'},{font:fnt(11,true),nf:NUM_,align:RIGHTV});
+  ws.mergeCells('A23:B23');setCell(ws,'A23','매출 합계(운항+소매)',{font:fnt(11,true),align:CENTER});
+  ws.mergeCells('C23:H23');setCell(ws,'C23',{formula:'C19+C22'},{font:fnt(14,true),nf:NUM_,align:RIGHTV});
+  box(ws,'A4:H23',all(thin));
+  ['A20','B20','C20'].forEach(r=>ws.getCell(r).border={...all(thin),top:med});
+  ['A23','B23','C23'].forEach(r=>ws.getCell(r).border={...all(thin),top:med});
+  setCell(ws,'J4','비고',{font:fnt(10,true)});
   let jr=5;const notes=[];
   for(let v=1;v<=5;v++){const st=row[`v${v}_status`],n=row[`v${v}_note`];
     if(st&&st!=='운항')notes.push(`*${v}항차 ${st}${n?' ('+n+')':''}`);else if(n)notes.push(`*${v}항차 ${n}`);}
+  (row.items||[]).forEach(it=>notes.push(`[${it.kind}] ${it.name||''} ${it.amount?fmtNum(it.amount)+'원':''} ${it.qty?it.qty+QTY_LABEL[it.kind]:''}`.replace(/\s+/g,' ').trim()));
+  if(row.etc_note)notes.push(`[기타] ${row.etc_note}`);
   if(row.extra_pax)notes.push(`*항차 외 인원 ${row.extra_pax}명${row.extra_pax_note?' ('+row.extra_pax_note+')':''}`);
   if(row.pos_pax!=null&&row.pos_pax!=='')notes.push(`포스상인원:${row.pos_pax}`);
   if(row.memo)notes.push(row.memo);
   if(row._missing)notes.push('※ 미입력일');
-  notes.forEach(t=>setCell(ws,`J${jr++}`,t,{font:fnt(11),align:RIGHTV}));
+  notes.forEach(t=>setCell(ws,`J${jr++}`,t,{font:fnt(10),align:RIGHTV}));
   return ws;
 }
+const fmtNum=(n)=>Number(n||0).toLocaleString('ko-KR');
 
-/* ---------- 주간 시트 (원본 01월1주차 시트 구조, 일별 시트 참조 수식) ---------- */
+/* ---------- 주간/월간 공통 본문 (7~25행) ---------- */
+// 7~10 인원 · 11 합계(명) · 12 탑승률 · 13 크루즈 매출 · 14 노쇼 · 15~18 참고(단체/대관/야간운항/상품권) · 19 기타 · 20 효정1호 · 21 운항 합계
+// 22 편의점 · 23 굿즈샵 · 24 소매 합계 · 25 매출 합계
+function bodyHeader(ws,title,sub,colTitle){
+  ws.mergeCells('A1:H2');setCell(ws,'A1',title,{font:fnt(20),align:CENTER});
+  setCell(ws,'H3',sub,{font:fnt(8),align:{horizontal:'right'}});
+  ws.mergeCells('A4:B6');setCell(ws,'A4','구 분',{font:fnt(11),align:CENTER});
+  ws.mergeCells('C4:G5');setCell(ws,'C4',colTitle,{font:fnt(10),align:CENTER});
+  ws.mergeCells('H4:H6');setCell(ws,'H4','합 계',{font:fnt(11),align:CENTER});
+  const VT=['1항차\n(10:00)','2항차\n(11:20)','3항차\n(13:30)','4항차\n(14:50)','5항차\n(16:10)'];
+  COLS.forEach((c,i)=>setCell(ws,`${c}6`,VT[i],{font:fnt(10),align:{...CENTER,wrapText:true}}));
+  ws.mergeCells('A7:A21');setCell(ws,'A7','운 항',{font:fnt(11),align:CENTER});
+  ws.getRow(1).height=30;ws.getRow(2).height=30;ws.getRow(6).height=48;for(let r=7;r<=24;r++)ws.getRow(r).height=30;ws.getRow(25).height=48;}
+function bodyFooter(ws,denom,cvs,goods){
+  setCell(ws,'B19','기타',{font:fnt(10),align:CENTER});ws.mergeCells('C19:H19');
+  setCell(ws,'B20','효정1호 매출',{font:fnt(10),align:CENTER});ws.mergeCells('C20:H20');
+  setCell(ws,'B21','운항 매출 합계',{font:fnt(11,true),align:CENTER});ws.mergeCells('C21:H21');setCell(ws,'C21',{formula:'H13+C14+C19+C20'},{font:fnt(11,true),nf:NUM,align:RIGHTV});
+  ws.mergeCells('A22:A24');setCell(ws,'A22','소 매',{font:fnt(11),align:CENTER});
+  setCell(ws,'B22','선내 편의점 매출',{font:fnt(10),align:CENTER});ws.mergeCells('C22:H22');setCell(ws,'C22',cvs,{font:fnt(10),nf:NUM_,align:RIGHTV});
+  setCell(ws,'B23','굿즈샵 매출',{font:fnt(10),align:CENTER});ws.mergeCells('C23:H23');setCell(ws,'C23',goods,{font:fnt(10),nf:NUM_,align:RIGHTV});
+  setCell(ws,'B24','소매 매출 합계',{font:fnt(11,true),align:CENTER});ws.mergeCells('C24:H24');setCell(ws,'C24',{formula:'C22+C23'},{font:fnt(11,true),nf:NUM_,align:RIGHTV});
+  ws.mergeCells('A25:B25');setCell(ws,'A25','매출 합계(운항+소매)',{font:fnt(11,true),align:CENTER});
+  ws.mergeCells('C25:H25');setCell(ws,'C25',{formula:'C21+C24'},{font:fnt(14,true),nf:NUM_,align:RIGHTV});
+  setCell(ws,'B12','탑승률',{font:fnt(10),align:CENTER});
+  COLS.forEach(c=>setCell(ws,`${c}12`,{formula:`${c}11/(250*${denom})`},{font:fnt(10),nf:PCT,align:RIGHTV}));
+  setCell(ws,'H12',{formula:`H11/(250*5*${denom})`},{font:fnt(10),nf:PCT,align:RIGHTV});
+  box(ws,'A4:H25',all(thin));
+  ['A22','B22','C22'].forEach(r=>ws.getCell(r).border={...all(thin),top:med});
+  ['A24','B24','C24'].forEach(r=>ws.getCell(r).border={...all(thin),bottom:med});
+  ['A25','B25','C25'].forEach(r=>ws.getCell(r).border={...all(thin),top:med});}
+
+/* ---------- 주간 시트 (일별 시트 참조 수식) ---------- */
 function buildWeekSheet(wb,monday,rowsByDate,opt){
   opt=opt||{};
   const days=[];for(let i=0;i<7;i++)days.push(addDays(monday,i));
   const refs=days.map(sheetName);
   const ws=wb.addWorksheet(opt.name||weekLabel(monday));
   ws.columns=[{width:5},{width:20.6},{width:11.6},{width:11.6},{width:11.6},{width:11.6},{width:11.6},{width:16},{width:3},{width:12},{width:16}];
-  const H={1:30,2:30,6:57,7:39.9,8:39.9,9:39.9,10:39.9,11:39.9,12:39.9,13:35.4,14:39.75,15:39.75,16:39.75,17:30,18:30,19:39.9,20:60.75};
-  Object.entries(H).forEach(([r,h])=>ws.getRow(+r).height=h);
   const sun=days[6];const ds=d2(monday),de=d2(sun);
   const title=`${ds.getFullYear()}년 ${String(ds.getMonth()+1).padStart(2,'0')}월 ${String(ds.getDate()).padStart(2,'0')}일(월) ~ ${String(de.getMonth()+1).padStart(2,'0')}월 ${String(de.getDate()).padStart(2,'0')}일(일)`;
-  ws.mergeCells('A1:H2');setCell(ws,'A1',title,{font:fnt(20),align:CENTER});
-  setCell(ws,'H3','(단위: 원, VAT포함)',{font:fnt(8),align:{horizontal:'right'}});
-  ws.mergeCells('A4:B6');setCell(ws,'A4','구 분',{font:fnt(11),align:CENTER});
-  ws.mergeCells('C4:G5');setCell(ws,'C4','청평호투어(월~일)',{font:fnt(10),align:CENTER});
-  ws.mergeCells('H4:H6');setCell(ws,'H4','합 계',{font:fnt(11),align:CENTER});
-  const VT=['1항차\n(10:00)','2항차\n(11:20)','3항차\n(13:30)','4항차\n(14:50)','5항차\n(16:10)'];
-  COLS.forEach((c,i)=>setCell(ws,`${c}6`,VT[i],{font:fnt(10),align:{...CENTER,wrapText:true}}));
-  ws.mergeCells('A7:A16');setCell(ws,'A7','운 항',{font:fnt(11),align:CENTER});
+  bodyHeader(ws,title,'(단위: 원, VAT포함)','청평호투어(월~일)');
   const sumRef=(col,r)=>refs.map(s=>`'${s}'!$${col}${r}`).join('+');
+  const sumRefN=(col,r)=>refs.map(s=>`'${s}'!${col}${r}`).join('+');
   PAX.forEach((k,i)=>{const r=7+i;setCell(ws,`B${r}`,PAX_LABEL[k],{font:fnt(10),align:CENTER});
     COLS.forEach(c=>setCell(ws,`${c}${r}`,{formula:sumRef(c,5+i)},{font:fnt(10),align:RIGHTV}));
     setCell(ws,`H${r}`,{formula:`SUM(C${r}:G${r})`},{font:fnt(10),align:RIGHTV});});
@@ -448,68 +495,49 @@ function buildWeekSheet(wb,monday,rowsByDate,opt){
   setCell(ws,'J11',{formula:`H11=(C11+D11+E11+F11+G11)${extra?'+'+extra:''}`},{font:fnt(11),align:CENTER,border:all(thin)});
   const pos=days.map(d=>(rowsByDate[d]||{}).pos_pax).filter(v=>v!=null&&v!=='');
   if(pos.length)setCell(ws,'K11',`포스상인원:${pos.reduce((a,b)=>a+Number(b),0)}`,{font:fnt(11),align:RIGHTV});
-  setCell(ws,'B12','탑승률',{font:fnt(10),align:CENTER});
-  COLS.forEach(c=>setCell(ws,`${c}12`,{formula:`${c}11/(250*7)`},{font:fnt(10),nf:PCT,align:RIGHTV}));
-  setCell(ws,'H12',{formula:'H11/(250*5*7)'},{font:fnt(10),nf:PCT,align:RIGHTV});
   setCell(ws,'B13','가평크루즈 매출',{font:fnt(10),align:CENTER});
-  COLS.forEach(c=>setCell(ws,`${c}13`,{formula:refs.map(s=>`'${s}'!${c}11`).join('+')},{font:fnt(10),nf:NUM,align:RIGHTV}));
+  COLS.forEach(c=>setCell(ws,`${c}13`,{formula:sumRefN(c,11)},{font:fnt(10),nf:NUM,align:RIGHTV}));
   setCell(ws,'H13',{formula:'SUM(C13:G13)'},{font:fnt(10,true),nf:NUM_,align:RIGHTV});
-  setCell(ws,'B14','기타\n(대관, 달빛투어, 상품권 등)',{font:fnt(10),align:{...CENTER,wrapText:true}});
-  ws.mergeCells('C14:H14');setCell(ws,'C14',{formula:refs.map(s=>`'${s}'!C12`).join('+')},{font:fnt(10),nf:NUM,align:RIGHTV});
-  setCell(ws,'B15','효정1호 매출',{font:fnt(10),align:CENTER});
-  ws.mergeCells('C15:H15');setCell(ws,'C15',{formula:refs.map(s=>`'${s}'!C13`).join('+')},{font:fnt(10),nf:NUM,align:RIGHTV});
-  setCell(ws,'B16','운항 매출 합계',{font:fnt(11,true),align:CENTER});
-  ws.mergeCells('C16:H16');setCell(ws,'C16',{formula:'H13+C15+C14'},{font:fnt(11,true),nf:NUM,align:RIGHTV});
-  ws.mergeCells('A17:A19');setCell(ws,'A17','소 매',{font:fnt(11),align:CENTER});
-  setCell(ws,'B17','선내 편의점 매출',{font:fnt(10),align:CENTER});
-  ws.mergeCells('C17:H17');setCell(ws,'C17',{formula:refs.map(s=>`'${s}'!C15`).join('+')},{font:fnt(10),nf:NUM_,align:RIGHTV});
-  setCell(ws,'B18','굿즈샵 매출',{font:fnt(10),align:CENTER});
-  ws.mergeCells('C18:H18');setCell(ws,'C18',{formula:refs.map(s=>`'${s}'!C16`).join('+')},{font:fnt(10),nf:NUM_,align:RIGHTV});
-  setCell(ws,'B19','소매 매출 합계',{font:fnt(11,true),align:CENTER});
-  ws.mergeCells('C19:H19');setCell(ws,'C19',{formula:'C17+C18'},{font:fnt(11,true),nf:NUM_,align:RIGHTV});
-  ws.mergeCells('A20:B20');setCell(ws,'A20','매출 합계(운항+소매)',{font:fnt(11,true),align:CENTER});
-  ws.mergeCells('C20:H20');setCell(ws,'C20',{formula:'C16+C19'},{font:fnt(14,true),nf:NUM_,align:RIGHTV});
-  box(ws,'A4:H20',all(thin));
-  ['A17','B17','C17'].forEach(r=>ws.getCell(r).border={...all(thin),top:med});
-  ['A19','B19','C19'].forEach(r=>ws.getCell(r).border={...all(thin),bottom:med});
-  ['A20','B20','C20'].forEach(r=>ws.getCell(r).border={...all(thin),top:med});
-  // 주석 (B23~): 항차 외 인원·미운항·미입력
-  let nr=23;const notes=[];
+  refLine(ws,14,'노쇼',{formula:sumRefN('C',12)},{formula:sumRefN('G',12)},'명');
+  REF_ROWS.forEach(([dr,k],i)=>refLine(ws,15+i,`${k}(참고)`,{formula:sumRefN('C',dr)},{formula:sumRefN('G',dr)},QTY_LABEL[k]));
+  bodyFooter(ws,7,{formula:sumRefN('C',20)},{formula:sumRefN('C',21)});
+  setCell(ws,'C19',{formula:sumRefN('C',17)},{font:fnt(10),nf:NUM,align:RIGHTV});
+  setCell(ws,'C20',{formula:sumRefN('C',18)},{font:fnt(10),nf:NUM,align:RIGHTV});
+  // 주석 (B28~)
+  let nr=28;const notes=[];
   days.forEach(d=>{const r=rowsByDate[d];const dd=d2(d).getDate();
     if(!r){notes.push(`*${dd}일 미입력`);return;}
-    if(r.extra_pax)notes.push(`*${dd}일 ${r.extra_pax_note||'항차 외 인원'} ${r.extra_pax}명`);
-    for(let v=1;v<=5;v++){const st=r[`v${v}_status`];if(st&&st!=='운항')notes.push(`*${dd}일 ${v}항차 ${st}${r[`v${v}_note`]?'('+r[`v${v}_note`]+')':''}`);}});
+    for(let v=1;v<=5;v++){const st=r[`v${v}_status`];if(st&&st!=='운항')notes.push(`*${dd}일 ${v}항차 ${st}${r[`v${v}_note`]?'('+r[`v${v}_note`]+')':''}`);}
+    (r.items||[]).forEach(it=>{if(it.kind!=='상품권')notes.push(`*${dd}일 [${it.kind}] ${it.name||''} ${it.qty?it.qty+'명':''} ${it.amount?fmtNum(it.amount)+'원':''}`.replace(/\s+/g,' ').trim());});
+    if(r.etc_note)notes.push(`*${dd}일 [기타] ${r.etc_note}`);
+    if(r.extra_pax)notes.push(`*${dd}일 ${r.extra_pax_note||'항차 외 인원'} ${r.extra_pax}명`);});
   notes.forEach(t=>setCell(ws,`B${nr++}`,t,{font:fnt(11),align:RIGHTV}));
   return ws;
 }
 
-/* ---------- 월간 시트: 주간 양식과 같은 표를 월 합계로 + 주차별 요약 ---------- */
+/* ---------- 집계 ---------- */
 function aggregate(rows){ // rows: 배열
-  const a={pax:{},rev:[0,0,0,0,0],etc:0,hyo:0,cvs:0,goods:0,extra:0,pos:0,posN:0,days:rows.length};
+  const a={pax:{},rev:[0,0,0,0,0],etc:0,hyo:0,cvs:0,goods:0,extra:0,pos:0,posN:0,noshow:0,noshowPax:0,days:rows.length};
   PAX.forEach(k=>a.pax[k]=[0,0,0,0,0]);
   rows.forEach(r=>{for(let v=0;v<5;v++){PAX.forEach(k=>a.pax[k][v]+=Number(r[`v${v+1}_${k}`]||0));a.rev[v]+=Number(r[`v${v+1}_rev`]||0);}
     a.etc+=Number(r.etc_rev||0);a.hyo+=Number(r.hyojeong_rev||0);a.cvs+=Number(r.cvs_rev||0);a.goods+=Number(r.goods_rev||0);a.extra+=Number(r.extra_pax||0);
+    a.noshow+=Number(r.noshow_rev||0);a.noshowPax+=Number(r.noshow_pax||0);
     if(r.pos_pax!=null&&r.pos_pax!==''){a.pos+=Number(r.pos_pax);a.posN++;}});
+  a.items=itemsByKind(rows);
   a.paxV=[0,1,2,3,4].map(v=>PAX.reduce((s,k)=>s+a.pax[k][v],0));
   a.paxSum=a.paxV.reduce((s,x)=>s+x,0);a.paxTotal=a.paxSum+a.extra;
-  a.cruise=a.rev.reduce((s,x)=>s+x,0);a.ops=a.cruise+a.etc+a.hyo;a.retail=a.cvs+a.goods;a.total=a.ops+a.retail;
+  a.cruise=a.rev.reduce((s,x)=>s+x,0);a.ops=a.cruise+a.noshow+a.etc+a.hyo;a.retail=a.cvs+a.goods;a.total=a.ops+a.retail;
   return a;
 }
+
+/* ---------- 월간 시트: 월 합계 + 주차별 요약 ---------- */
 function buildMonthSheet(wb,ym,rowsByDate,weeks){
   const [y,m]=ym.split('-').map(Number);const dim=daysInMonth(ym);
   const rows=Object.keys(rowsByDate).filter(d=>d.startsWith(ym)).sort().map(d=>rowsByDate[d]);
   const a=aggregate(rows);
-  const ws=wb.addWorksheet(`${String(m).padStart(2,'0')}월 월간`,{},);
+  const ws=wb.addWorksheet(`${String(m).padStart(2,'0')}월 월간`);
   ws.columns=[{width:5},{width:22},{width:12},{width:12},{width:12},{width:12},{width:12},{width:16},{width:3},{width:12},{width:14},{width:14},{width:14},{width:14},{width:16}];
-  ws.getRow(1).height=30;ws.getRow(2).height=30;ws.getRow(6).height=40;for(let r=7;r<=20;r++)ws.getRow(r).height=30;
-  ws.mergeCells('A1:H2');setCell(ws,'A1',`${y}년 ${String(m).padStart(2,'0')}월 월간 매출현황`,{font:fnt(20),align:CENTER});
-  setCell(ws,'H3',`(단위: 원, VAT포함 · 입력 ${a.days}일/${dim}일)`,{font:fnt(8),align:{horizontal:'right'}});
-  ws.mergeCells('A4:B6');setCell(ws,'A4','구 분',{font:fnt(11),align:CENTER});
-  ws.mergeCells('C4:G5');setCell(ws,'C4','청평호투어(월 합계)',{font:fnt(10),align:CENTER});
-  ws.mergeCells('H4:H6');setCell(ws,'H4','합 계',{font:fnt(11),align:CENTER});
-  const VT=['1항차\n(10:00)','2항차\n(11:20)','3항차\n(13:30)','4항차\n(14:50)','5항차\n(16:10)'];
-  COLS.forEach((c,i)=>setCell(ws,`${c}6`,VT[i],{font:fnt(10),align:{...CENTER,wrapText:true}}));
-  ws.mergeCells('A7:A16');setCell(ws,'A7','운 항',{font:fnt(11),align:CENTER});
+  bodyHeader(ws,`${y}년 ${String(m).padStart(2,'0')}월 월간 매출현황`,`(단위: 원, VAT포함 · 입력 ${a.days}일/${dim}일)`,'청평호투어(월 합계)');
   PAX.forEach((k,i)=>{const r=7+i;setCell(ws,`B${r}`,PAX_LABEL[k],{font:fnt(10),align:CENTER});
     COLS.forEach((c,v)=>setCell(ws,`${c}${r}`,a.pax[k][v],{font:fnt(10),nf:NUM,align:RIGHTV}));
     setCell(ws,`H${r}`,{formula:`SUM(C${r}:G${r})`},{font:fnt(10),nf:NUM,align:RIGHTV});});
@@ -517,39 +545,30 @@ function buildMonthSheet(wb,ym,rowsByDate,weeks){
   COLS.forEach(c=>setCell(ws,`${c}11`,{formula:`SUM(${c}7:${c}10)`},{font:fnt(10),nf:NUM,align:RIGHTV}));
   setCell(ws,'H11',{formula:`SUM(H7:H10)${a.extra?'+'+a.extra:''}`},{font:fnt(10,true),nf:NUM,align:RIGHTV});
   if(a.posN)setCell(ws,'K11',`포스상인원:${a.pos}`,{font:fnt(11),align:RIGHTV});
-  setCell(ws,'B12','탑승률',{font:fnt(10),align:CENTER});
-  COLS.forEach(c=>setCell(ws,`${c}12`,{formula:`${c}11/(250*${dim})`},{font:fnt(10),nf:PCT,align:RIGHTV}));
-  setCell(ws,'H12',{formula:`H11/(250*5*${dim})`},{font:fnt(10),nf:PCT,align:RIGHTV});
   setCell(ws,'B13','가평크루즈 매출',{font:fnt(10),align:CENTER});
   COLS.forEach((c,v)=>setCell(ws,`${c}13`,a.rev[v],{font:fnt(10),nf:NUM,align:RIGHTV}));
   setCell(ws,'H13',{formula:'SUM(C13:G13)'},{font:fnt(10,true),nf:NUM_,align:RIGHTV});
-  setCell(ws,'B14','기타\n(대관, 달빛투어, 상품권 등)',{font:fnt(10),align:{...CENTER,wrapText:true}});
-  ws.mergeCells('C14:H14');setCell(ws,'C14',a.etc,{font:fnt(10),nf:NUM,align:RIGHTV});
-  setCell(ws,'B15','효정1호 매출',{font:fnt(10),align:CENTER});ws.mergeCells('C15:H15');setCell(ws,'C15',a.hyo,{font:fnt(10),nf:NUM,align:RIGHTV});
-  setCell(ws,'B16','운항 매출 합계',{font:fnt(11,true),align:CENTER});ws.mergeCells('C16:H16');setCell(ws,'C16',{formula:'H13+C15+C14'},{font:fnt(11,true),nf:NUM,align:RIGHTV});
-  ws.mergeCells('A17:A19');setCell(ws,'A17','소 매',{font:fnt(11),align:CENTER});
-  setCell(ws,'B17','선내 편의점 매출',{font:fnt(10),align:CENTER});ws.mergeCells('C17:H17');setCell(ws,'C17',a.cvs,{font:fnt(10),nf:NUM_,align:RIGHTV});
-  setCell(ws,'B18','굿즈샵 매출',{font:fnt(10),align:CENTER});ws.mergeCells('C18:H18');setCell(ws,'C18',a.goods,{font:fnt(10),nf:NUM_,align:RIGHTV});
-  setCell(ws,'B19','소매 매출 합계',{font:fnt(11,true),align:CENTER});ws.mergeCells('C19:H19');setCell(ws,'C19',{formula:'C17+C18'},{font:fnt(11,true),nf:NUM_,align:RIGHTV});
-  ws.mergeCells('A20:B20');setCell(ws,'A20','매출 합계(운항+소매)',{font:fnt(11,true),align:CENTER});
-  ws.mergeCells('C20:H20');setCell(ws,'C20',{formula:'C16+C19'},{font:fnt(14,true),nf:NUM_,align:RIGHTV});
-  box(ws,'A4:H20',all(thin));
-  ['A17','B17','C17'].forEach(r=>ws.getCell(r).border={...all(thin),top:med});
-  ['A20','B20','C20'].forEach(r=>ws.getCell(r).border={...all(thin),top:med});
+  refLine(ws,14,'노쇼',a.noshow,a.noshowPax,'명');
+  REF_ROWS.forEach(([dr,k],i)=>refLine(ws,15+i,`${k}(참고)`,a.items[k].amount,a.items[k].qty,QTY_LABEL[k]));
+  bodyFooter(ws,dim,a.cvs,a.goods);
+  setCell(ws,'C19',a.etc,{font:fnt(10),nf:NUM,align:RIGHTV});setCell(ws,'C20',a.hyo,{font:fnt(10),nf:NUM,align:RIGHTV});
   // 주차별 요약 (J4~)
   const hdr=['주차','기간','인원(명)','운항 매출','소매 매출','매출 합계'];
   hdr.forEach((h,i)=>setCell(ws,String.fromCharCode(74+i)+'4',h,{font:fnt(10,true),align:CENTER,border:all(thin),fill:{type:'pattern',pattern:'solid',fgColor:{argb:'FFE7F0F8'}}}));
-  let r=5;const T={pax:0,ops:0,retail:0,total:0};
+  let r=5;
   weeks.forEach(w=>{const wa=w.agg;
     setCell(ws,`J${r}`,w.label,{font:fnt(10),align:CENTER,border:all(thin)});
     setCell(ws,`K${r}`,`${w.monday.slice(5).replace('-','/')}~${w.sunday.slice(5).replace('-','/')}`,{font:fnt(10),align:CENTER,border:all(thin)});
     setCell(ws,`L${r}`,wa.paxTotal,{font:fnt(10),nf:NUM,border:all(thin)});setCell(ws,`M${r}`,wa.ops,{font:fnt(10),nf:NUM,border:all(thin)});
-    setCell(ws,`N${r}`,wa.retail,{font:fnt(10),nf:NUM,border:all(thin)});setCell(ws,`O${r}`,wa.total,{font:fnt(10),nf:NUM,border:all(thin)});
-    T.pax+=wa.paxTotal;T.ops+=wa.ops;T.retail+=wa.retail;T.total+=wa.total;r++;});
+    setCell(ws,`N${r}`,wa.retail,{font:fnt(10),nf:NUM,border:all(thin)});setCell(ws,`O${r}`,wa.total,{font:fnt(10),nf:NUM,border:all(thin)});r++;});
   setCell(ws,`J${r}`,'합계',{font:fnt(10,true),align:CENTER,border:all(thin)});setCell(ws,`K${r}`,'',{border:all(thin)});
-  setCell(ws,`L${r}`,{formula:`SUM(L5:L${r-1})`},{font:fnt(10,true),nf:NUM,border:all(thin)});setCell(ws,`M${r}`,{formula:`SUM(M5:M${r-1})`},{font:fnt(10,true),nf:NUM,border:all(thin)});
-  setCell(ws,`N${r}`,{formula:`SUM(N5:N${r-1})`},{font:fnt(10,true),nf:NUM,border:all(thin)});setCell(ws,`O${r}`,{formula:`SUM(O5:O${r-1})`},{font:fnt(10,true),nf:NUM,border:all(thin)});
+  ['L','M','N','O'].forEach(c=>setCell(ws,`${c}${r}`,{formula:`SUM(${c}5:${c}${r-1})`},{font:fnt(10,true),nf:NUM,border:all(thin)}));
   setCell(ws,`J${r+1}`,'※ 월을 걸치는 주차는 이 달에 속한 날짜만 집계',{font:fnt(9)});
+  // 참고 항목 상세 (J열 아래)
+  let rr=r+3;setCell(ws,`J${rr}`,'참고 항목 상세 (항차 매출·인원에 포함)',{font:fnt(10,true)});rr++;
+  ['일자','구분','단체명/이벤트명','매출액','인원/매수'].forEach((h,i)=>setCell(ws,String.fromCharCode(74+i)+rr,h,{font:fnt(10,true),align:CENTER,border:all(thin),fill:{type:'pattern',pattern:'solid',fgColor:{argb:'FFE7F0F8'}}}));rr++;
+  rows.forEach(d=>(d.items||[]).forEach(it=>{setCell(ws,`J${rr}`,d.sales_date.slice(5),{font:fnt(10),align:CENTER,border:all(thin)});setCell(ws,`K${rr}`,it.kind,{font:fnt(10),align:CENTER,border:all(thin)});
+    setCell(ws,`L${rr}`,it.name||'',{font:fnt(10),border:all(thin)});setCell(ws,`M${rr}`,it.amount||0,{font:fnt(10),nf:NUM,border:all(thin)});setCell(ws,`N${rr}`,it.qty||0,{font:fnt(10),nf:`#,##0"${QTY_LABEL[it.kind]}"`,border:all(thin)});rr++;}));
   return ws;
 }
 
@@ -595,7 +614,7 @@ function makeMonthWorkbook(ExcelJS,ym,rowsByDate,worklog){
   if(worklog&&worklog.length)buildWorklogSheet(wb,worklog,'업무일지');
   return wb;
 }
-global.DSX={d2,iso,addDays,sheetName,kdate,mondayOf,weekLabel,weekFile,emptyRow,daysInMonth,aggregate,weeksOfMonth,makeWeekWorkbook,makeMonthWorkbook,PAX,PAX_LABEL,WD};
+global.DSX={d2,iso,addDays,sheetName,kdate,mondayOf,weekLabel,weekFile,emptyRow,daysInMonth,aggregate,weeksOfMonth,makeWeekWorkbook,makeMonthWorkbook,itemsByKind,KINDS,QTY_LABEL,PAX,PAX_LABEL,WD};
 })(typeof window!=='undefined'?window:globalThis);
 </script>
 
@@ -603,7 +622,7 @@ global.DSX={d2,iso,addDays,sheetName,kdate,mondayOf,weekLabel,weekFile,emptyRow,
 /* ===================== 앱 본체 ===================== */
 (function(){
 const $=(s)=>document.querySelector(s), $$=(s)=>[...document.querySelectorAll(s)];
-const {d2,iso,addDays,mondayOf,weekLabel,weekFile,emptyRow,daysInMonth,aggregate,weeksOfMonth,PAX,PAX_LABEL,WD}=DSX;
+const {d2,iso,addDays,mondayOf,weekLabel,weekFile,emptyRow,daysInMonth,aggregate,weeksOfMonth,KINDS,QTY_LABEL,PAX,PAX_LABEL,WD}=DSX;
 const fmt=(n)=>Number(n||0).toLocaleString('ko-KR');
 const pct=(n)=>(Number(n||0)*100).toFixed(2)+'%';
 const fmtTs=(ts)=>ts?new Date(ts).toLocaleString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).replace(/\. /g,'-').replace('.','').replace(/-(\d\d):/,' $1:'):'';
@@ -679,21 +698,33 @@ function buildGrid(){const tb=$('#dBody');tb.innerHTML='';
    ${PAX.map(k=>`<td><input type="number" min="0" step="1" data-f="v${v}_${k}"></td>`).join('')}
    <td class="calc num" id="c${v}pax">0</td><td class="calc num" id="c${v}rate">0.00%</td>
    <td><input type="number" min="0" step="1" data-f="v${v}_rev"></td><td><input type="text" data-f="v${v}_note" placeholder="예) 기상악화 결항"></td>`;tb.appendChild(tr);}
-  $$('#tab-daily input,#tab-daily select').forEach(el=>{el.addEventListener('input',recalc);el.addEventListener('change',recalc);});
-  $$('#dGrid input[type=number]').forEach(el=>el.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const list=$$('#tab-daily input:not([type=date]),#tab-daily select');const i=list.indexOf(el);if(list[i+1])list[i+1].focus();}}));
+  const ns=document.createElement('tr');ns.className='noshow';ns.innerHTML=`<td class="c"><b>노쇼</b></td><td class="c hint">—</td><td colspan="4"><div class="row" style="gap:6px"><span class="hint">인원</span><input type="number" min="0" step="1" data-f="noshow_pax" style="width:90px;text-align:right"><span class="hint">명 (합계 인원 미포함)</span></div></td><td class="calc num" id="cNpax">0</td><td class="calc">—</td><td><input type="number" min="0" step="1" data-f="noshow_rev" placeholder="노쇼 매출"></td><td class="hint">운항 매출 합계에 포함</td>`;tb.appendChild(ns);
+  $$('#tab-daily [data-add]').forEach(b=>b.onclick=()=>{addItemRow(b.dataset.add,{});recalc();$$(`#tab-daily [data-it="${b.dataset.add}"][data-k="name"]`).pop()?.focus();});
+  bindRecalc();
 }
+function bindRecalc(){$$('#tab-daily input,#tab-daily select').forEach(el=>{if(el._rc)return;el._rc=1;el.addEventListener('input',recalc);el.addEventListener('change',recalc);
+  if(el.type==='number'||el.type==='text')el.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const list=$$('#tab-daily input:not([type=date]):not([type=checkbox]),#tab-daily select');const i=list.indexOf(el);if(list[i+1])list[i+1].focus();}});});}
+const ITEM_TBL={단체:'#itGroup',대관:'#itRental',상품권:'#itVoucher'};
+function addItemRow(kind,it){const tb=$(ITEM_TBL[kind]+' tbody');const tr=document.createElement('tr');const n=tb.children.length+1;
+  tr.innerHTML=`<td class="c hint">${n}</td><td><input type="text" data-it="${kind}" data-k="name" value="${esc(it.name||'')}" placeholder="${kind==='상품권'?'예) 문화상품권':'단체명'}"></td><td><input type="number" min="0" step="1" data-it="${kind}" data-k="amount" value="${it.amount||''}"></td><td><input type="number" min="0" step="1" data-it="${kind}" data-k="qty" value="${it.qty||''}"></td><td class="c"><button class="btn sm danger" type="button">×</button></td>`;
+  tr.querySelector('button').onclick=()=>{tr.remove();[...tb.children].forEach((r,i)=>r.firstElementChild.textContent=i+1);recalc();};tb.appendChild(tr);bindRecalc();}
+function readItems(){const out=[];const rows={};$$('#tab-daily [data-it]').forEach(el=>{const key=el.dataset.it+'|'+(el.closest('tr').rowIndex);(rows[key]=rows[key]||{kind:el.dataset.it})[el.dataset.k]=el.type==='number'?(el.value===''?0:Number(el.value)):el.value.trim();});
+  Object.values(rows).forEach(r=>{if(r.name||r.amount||r.qty)out.push({kind:r.kind,name:r.name||'',amount:r.amount||0,qty:r.qty||0});});return out;}
+function fillItems(items){Object.values(ITEM_TBL).forEach(sel=>$(sel+' tbody').innerHTML='');$$('#itNight [data-it]').forEach(el=>el.value='');
+  (items||[]).forEach(it=>{if(it.kind==='야간운항'){$$('#itNight [data-it]').forEach(el=>{const v=it[el.dataset.k];el.value=(v==null||v===0)?'':v;});}else if(ITEM_TBL[it.kind])addItemRow(it.kind,it);});}
 function readForm(){const row=emptyRow(dDate.value);$$('#tab-daily [data-f]').forEach(el=>{row[el.dataset.f]=el.type==='number'?(el.value===''?0:Number(el.value)):(el.value||null);});
   row.etc_rev=Number($('#fEtc').value||0);row.hyojeong_rev=Number($('#fHyo').value||0);row.cvs_rev=Number($('#fCvs').value||0);row.goods_rev=Number($('#fGoods').value||0);
-  row.extra_pax=Number($('#fExtraPax').value||0);row.pos_pax=$('#fPosPax').value===''?null:Number($('#fPosPax').value);
-  row.extra_pax_note=$('#fExtraNote').value.trim()||null;row.memo=$('#fMemo').value.trim()||null;return row;}
+  row.pos_pax=$('#fPosPax').value===''?null:Number($('#fPosPax').value);row.etc_note=$('#fEtcNote').value.trim()||null;row.memo=$('#fMemo').value.trim()||null;
+  const cur=cache[dDate.value];row.extra_pax=cur?Number(cur.extra_pax||0):0;row.extra_pax_note=cur?(cur.extra_pax_note||null):null; // 구버전 필드 보존
+  row.items=readItems();return row;}
 function fillForm(row){row=row||emptyRow(dDate.value);$$('#tab-daily [data-f]').forEach(el=>{const v=row[el.dataset.f];el.value=(v==null?'':(el.type==='number'&&v===0?'':v));if(el.tagName==='SELECT')el.value=v||'운항';});
   const z=(v)=>(v==null||v===0)?'':v;$('#fEtc').value=z(row.etc_rev);$('#fHyo').value=z(row.hyojeong_rev);$('#fCvs').value=z(row.cvs_rev);$('#fGoods').value=z(row.goods_rev);
-  $('#fExtraPax').value=z(row.extra_pax);$('#fPosPax').value=row.pos_pax==null?'':row.pos_pax;$('#fExtraNote').value=row.extra_pax_note||'';$('#fMemo').value=row.memo||'';recalc();}
+  $('#fPosPax').value=row.pos_pax==null?'':row.pos_pax;$('#fEtcNote').value=row.etc_note||'';$('#fMemo').value=row.memo||'';fillItems(row.items);recalc();}
 function recalc(){const row=readForm();const a=aggregate([row]);
   for(let v=1;v<=5;v++){$('#c'+v+'pax').textContent=fmt(a.paxV[v-1]);$('#c'+v+'rate').textContent=pct(a.paxV[v-1]/250);}
   $('#tAdult').textContent=fmt(a.pax.adult.reduce((s,x)=>s+x,0));$('#tDisc').textContent=fmt(a.pax.disc.reduce((s,x)=>s+x,0));$('#tFree').textContent=fmt(a.pax.free.reduce((s,x)=>s+x,0));$('#tOnline').textContent=fmt(a.pax.online.reduce((s,x)=>s+x,0));
   $('#tPax').textContent=fmt(a.paxSum);$('#tRate').textContent=pct(a.paxSum/1250);$('#tRev').textContent=fmt(a.cruise);
-  $('#kOps').textContent=fmt(a.ops);$('#kRetail').textContent=fmt(a.retail);$('#kTotal').textContent=fmt(a.total);$('#kPax').textContent=fmt(a.paxTotal);
+  $('#kOps').textContent=fmt(a.ops);$('#kRetail').textContent=fmt(a.retail);$('#kTotal').textContent=fmt(a.total);$('#kPax').textContent=fmt(a.paxSum);$('#cNpax').textContent=fmt(a.noshowPax);
   // 미운항/결항인데 숫자가 있으면 경고
   let warn='';for(let v=1;v<=5;v++){if(row[`v${v}_status`]!=='운항'&&(a.paxV[v-1]||a.rev[v-1]))warn+=`${v}항차 ${row[`v${v}_status`]}인데 인원/매출 입력됨. `;}
   $('#dState').textContent=warn;$('#dState').style.color=warn?'var(--red)':'';}
@@ -744,7 +775,10 @@ function summaryTable(a,denomDays,titleCols){ // 양식 표 HTML
   h+=`<tr class="tot"><td class="l">합계(명)${a.extra?` <span class="hint">(항차 외 +${fmt(a.extra)})</span>`:''}</td>${a.paxV.map(x=>`<td class="num">${fmt(x)}</td>`).join('')}<td class="num">${fmt(a.paxTotal)}</td></tr>`;
   h+=`<tr><td class="l">탑승률 <span class="hint">(250명×${denomDays}일)</span></td>${a.paxV.map(x=>`<td class="num">${pct(x/(250*denomDays))}</td>`).join('')}<td class="num">${pct(a.paxTotal/(250*5*denomDays))}</td></tr>`;
   h+=rowP('가평크루즈 매출',a.rev);
-  h+=`<tr><td class="l">기타 (대관, 달빛투어, 상품권 등)</td><td class="num" colspan="6">${fmt(a.etc)}</td></tr>`;
+  const refRow=(label,amount,qty,ql,cls)=>`<tr${cls?' class="'+cls+'"':''}><td class="l">${label}</td><td class="num" colspan="4">${fmt(amount)}</td><td class="num" colspan="2">${fmt(qty)}${ql}</td></tr>`;
+  h+=refRow('노쇼 <span class="hint">(매출 포함 · 인원 미포함)</span>',a.noshow,a.noshowPax,'명');
+  KINDS.forEach(k=>{const b=a.items[k];h+=refRow(`${k} <span class="hint">(참고${b.n?' · '+b.n+'건':''})</span>`,b.amount,b.qty,QTY_LABEL[k]);});
+  h+=`<tr><td class="l">기타</td><td class="num" colspan="6">${fmt(a.etc)}</td></tr>`;
   h+=`<tr><td class="l">효정1호 매출</td><td class="num" colspan="6">${fmt(a.hyo)}</td></tr>`;
   h+=`<tr class="sub"><td class="l">운항 매출 합계</td><td class="num" colspan="6">${fmt(a.ops)}</td></tr>`;
   h+=`<tr><td class="l">선내 편의점 매출</td><td class="num" colspan="6">${fmt(a.cvs)}</td></tr>`;
@@ -753,14 +787,15 @@ function summaryTable(a,denomDays,titleCols){ // 양식 표 HTML
   h+=`<tr class="grand"><td class="l">매출 합계 (운항+소매)</td><td class="num" colspan="6">${fmt(a.total)}</td></tr></tbody></table>`;
   return h;}
 function dailyTable(days){ // 일별 내역 표
-  let h=`<table class="tbl"><thead><tr><th>일자</th><th>인원(명)</th><th>항차 외</th><th>크루즈 매출</th><th>기타</th><th>효정1호</th><th>운항 합계</th><th>편의점</th><th>굿즈샵</th><th>소매 합계</th><th>매출 합계</th><th class="l">비고</th></tr></thead><tbody>`;
+  let h=`<table class="tbl"><thead><tr><th>일자</th><th>인원(명)</th><th>크루즈 매출</th><th>노쇼</th><th>기타</th><th>효정1호</th><th>운항 합계</th><th>편의점</th><th>굿즈샵</th><th>소매 합계</th><th>매출 합계</th><th class="l">참고 항목 · 비고</th></tr></thead><tbody>`;
   const T=aggregate(days.map(d=>cache[d]).filter(Boolean));
   days.forEach(d=>{const r=cache[d];const dt=d2(d);const lab=`${dt.getMonth()+1}/${dt.getDate()}(${WD[dt.getDay()]})`;
     if(!r){h+=`<tr><td class="c">${lab}</td><td class="c" colspan="10" style="color:var(--stone)">미입력</td><td></td></tr>`;return;}
     const a=aggregate([r]);const notes=[];for(let v=1;v<=5;v++){if(r[`v${v}_status`]!=='운항')notes.push(`${v}항차 ${r[`v${v}_status`]}`);else if(r[`v${v}_note`])notes.push(`${v}항차 ${r[`v${v}_note`]}`);}
-    if(r.extra_pax_note)notes.push(r.extra_pax_note);if(r.memo)notes.push(r.memo);
-    h+=`<tr><td class="c"><a href="#" data-goday="${d}">${lab}</a></td><td class="num">${fmt(a.paxSum)}</td><td class="num">${fmt(a.extra)}</td><td class="num">${fmt(a.cruise)}</td><td class="num">${fmt(a.etc)}</td><td class="num">${fmt(a.hyo)}</td><td class="num"><b>${fmt(a.ops)}</b></td><td class="num">${fmt(a.cvs)}</td><td class="num">${fmt(a.goods)}</td><td class="num"><b>${fmt(a.retail)}</b></td><td class="num"><b>${fmt(a.total)}</b></td><td class="l" style="white-space:normal;font-size:12px">${esc(notes.join(' · '))}</td></tr>`;});
-  h+=`<tr class="tot"><td class="c">합계</td><td class="num">${fmt(T.paxSum)}</td><td class="num">${fmt(T.extra)}</td><td class="num">${fmt(T.cruise)}</td><td class="num">${fmt(T.etc)}</td><td class="num">${fmt(T.hyo)}</td><td class="num">${fmt(T.ops)}</td><td class="num">${fmt(T.cvs)}</td><td class="num">${fmt(T.goods)}</td><td class="num">${fmt(T.retail)}</td><td class="num">${fmt(T.total)}</td><td></td></tr></tbody></table>`;
+    (r.items||[]).forEach(it=>notes.push(`[${it.kind}] ${it.name||''} ${it.qty?it.qty+QTY_LABEL[it.kind]:''} ${it.amount?fmt(it.amount)+'원':''}`.replace(/\s+/g,' ').trim()));
+    if(r.etc_note)notes.push('[기타] '+r.etc_note);if(r.extra_pax_note)notes.push(r.extra_pax_note);if(r.memo)notes.push(r.memo);
+    h+=`<tr><td class="c"><a href="#" data-goday="${d}">${lab}</a></td><td class="num">${fmt(a.paxSum)}${a.extra?'<span class="hint">+'+fmt(a.extra)+'</span>':''}</td><td class="num">${fmt(a.cruise)}</td><td class="num">${fmt(a.noshow)}</td><td class="num">${fmt(a.etc)}</td><td class="num">${fmt(a.hyo)}</td><td class="num"><b>${fmt(a.ops)}</b></td><td class="num">${fmt(a.cvs)}</td><td class="num">${fmt(a.goods)}</td><td class="num"><b>${fmt(a.retail)}</b></td><td class="num"><b>${fmt(a.total)}</b></td><td class="l" style="white-space:normal;font-size:12px">${esc(notes.join(' · '))}</td></tr>`;});
+  h+=`<tr class="tot"><td class="c">합계</td><td class="num">${fmt(T.paxTotal)}</td><td class="num">${fmt(T.cruise)}</td><td class="num">${fmt(T.noshow)}</td><td class="num">${fmt(T.etc)}</td><td class="num">${fmt(T.hyo)}</td><td class="num">${fmt(T.ops)}</td><td class="num">${fmt(T.cvs)}</td><td class="num">${fmt(T.goods)}</td><td class="num">${fmt(T.retail)}</td><td class="num">${fmt(T.total)}</td><td></td></tr></tbody></table>`;
   return h;}
 function bindGoDay(root){root.querySelectorAll('[data-goday]').forEach(a=>a.onclick=(e)=>{e.preventDefault();dDate.value=a.dataset.goday;showTab('daily');loadDay();});}
 function worklogHtml(days,filterTags){let h='';let any=false;
