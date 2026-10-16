@@ -133,6 +133,7 @@ table{border-collapse:collapse;width:100%}
         <button class="btn sm" id="dToday">오늘</button>
         <button class="btn sm" id="dNext">익일 ▶</button>
         <span class="hint" id="dState"></span>
+        <span class="pill" id="dSched"></span>
       </div>
       <div class="row">
         <span class="hint">작성자: <b id="dName"></b></span>
@@ -287,6 +288,24 @@ table{border-collapse:collapse;width:100%}
     </div>
     <p class="hint">초기 비밀번호로 처음 로그인하면 본인이 비밀번호를 바꾸도록 안내됩니다.</p>
   </div>
+  <div class="card" id="cardSched">
+    <h2>운항 스케줄 · 공휴일 <span class="hint">(탑승률 분모 계산용 · 편집은 관리자)</span></h2>
+    <div class="row">
+      <label class="f">월<input type="month" id="scMonth"></label>
+      <label class="f">항차 정원(명)<input type="number" id="scCap" min="1" style="width:90px"></label>
+      <span class="hint" id="scState"></span>
+    </div>
+    <div class="tblwrap" style="margin-top:8px"><table class="tbl" id="scTable" style="max-width:720px"></table></div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn sm" id="scCopyPrev">이전 달 스케줄 복사</button>
+      <button class="btn sm" id="scClear">이 달 설정 삭제(매일 5항차)</button>
+      <button class="btn primary sm" id="scSave">스케줄 저장</button>
+    </div>
+    <p class="hint">설정이 없는 달은 매일 1~5항차 운항으로 계산합니다. 요일을 전부 해제하면 그 요일은 휴무(공휴일이어도 휴무). 결항·미운항은 분모에서 빼지 않습니다.</p>
+    <h3>공휴일 목록</h3>
+    <div id="hlList" style="margin-bottom:6px"></div>
+    <div class="row"><input type="date" id="hlNew"><button class="btn sm" id="hlAdd">추가</button><button class="btn primary sm" id="hlSave">공휴일 저장</button><span class="hint">2026년 법정공휴일(대체공휴일 포함)이 기본으로 들어 있습니다.</span></div>
+  </div>
   <div class="card">
     <h2>업무 태그 편집 <span class="hint">(수정 권한)</span></h2>
     <div id="sTagList"></div>
@@ -310,8 +329,9 @@ table{border-collapse:collapse;width:100%}
     <ul>
       <li>금액은 원 단위, VAT 포함. 인원은 항차별 현장일반·현장우대·현장무료·온라인 합계 + 항차 외 인원(대관 등).</li>
       <li>주차 = 월요일~일요일. 주차 이름은 월요일이 속한 달 기준 "MM월 N주차" (N = 그 달의 N번째 월요일). 예) 2026-01-05~11 = 01월 1주차.</li>
-      <li>탑승률: 주간 = 인원 ÷ (250명 × 7일), 월간 = 인원 ÷ (250명 × 해당 월 일수). 합계열은 ×5항차. (양식과 동일하게 미운항일도 분모에 포함)</li>
+      <li>탑승률 = 인원 ÷ (정원 250 × 운항 스케줄상 항차 수). 항차별 열은 그 항차가 운항하는 날 수, 합계는 기간 내 전체 운항 항차 수. 설정 탭의 월별 운항 스케줄(요일별·공휴일)로 계산하며, 설정 없는 달은 매일 5항차. 결항·미운항도 분모에 포함.</li>
       <li>운항 매출 합계 = 항차 매출 + 노쇼 + 기타 + 효정1호. 소매 = 선내 편의점 + 굿즈샵.</li>
+      <li>운항 횟수 = 입력된 날 중 운항 상태가 '운항'인 항차 수(미입력일은 제외). 운항율 = 실제 운항 횟수 ÷ 스케줄상 예정 운항 횟수.</li>
       <li>단체·대관·야간운항·상품권은 참고 항목: 매출·인원이 항차 매출·인원에 이미 포함되어 있어 합계에 더하지 않음. 노쇼 인원도 합계(명)에 미포함.</li>
     </ul>
   </div>
@@ -377,6 +397,16 @@ function emptyRow(date){const r={sales_date:date};for(let v=1;v<=5;v++){PAX.forE
 const KINDS=['단체','대관','야간운항','상품권'];const QTY_LABEL={단체:'명',대관:'명',야간운항:'명',상품권:'매'};
 function itemsByKind(rows){const o={};KINDS.forEach(k=>o[k]={n:0,amount:0,qty:0,names:[]});rows.forEach(r=>(r.items||[]).forEach(it=>{const b=o[it.kind];if(!b)return;b.n++;b.amount+=Number(it.amount||0);b.qty+=Number(it.qty||0);if(it.name)b.names.push(it.name);}));return o;}
 function daysInMonth(ym){const [y,m]=ym.split('-').map(Number);return new Date(y,m,0).getDate();}
+/* ---------- 운항 스케줄 (탑승률 분모) ---------- */
+// schedule = {cap:250, months:{'YYYY-MM':{wd:[일,월,화,수,목,금,토 → 운항 항차 배열], hol:[공휴일 운항 항차]}}} — 설정 없는 달은 매일 5항차(기존 방식)
+// 규칙: 요일 배열이 비어 있으면(휴무) 공휴일이어도 휴무. 결항·미운항은 분모에서 빼지 않음.
+const ALL5=[1,2,3,4,5];
+const DEFAULT_SCHEDULE={cap:250,months:{'2026-10':{wd:[ALL5,[1,2,3],[1,2,3],[],[1,2,3],ALL5,ALL5],hol:ALL5}}};
+const DEFAULT_HOLIDAYS=['2026-01-01','2026-02-16','2026-02-17','2026-02-18','2026-03-01','2026-03-02','2026-05-05','2026-05-24','2026-05-25','2026-06-03','2026-06-06','2026-08-15','2026-08-17','2026-09-24','2026-09-25','2026-09-26','2026-10-03','2026-10-05','2026-10-09','2026-12-25'];
+function makeSched(schedule,holidays){const sc=schedule||DEFAULT_SCHEDULE;const hs=new Set(holidays||DEFAULT_HOLIDAYS);const cap=Number(sc.cap)||250;
+  const f=(date)=>{const mc=(sc.months||{})[date.slice(0,7)];if(!mc)return ALL5;const wd=(mc.wd||[])[d2(date).getDay()]||[];if(!wd.length)return [];return hs.has(date)?(mc.hol||[]):wd;};
+  f.cap=cap;f.isHoliday=(d)=>hs.has(d);f.hasMonth=(ym)=>!!(sc.months||{})[ym];return f;}
+function denomFor(days,sched){sched=sched||makeSched();const perV=[0,0,0,0,0];let total=0;days.forEach(d=>{const vs=sched(d);vs.forEach(v=>perV[v-1]++);total+=vs.length;});return {perV,total,cap:sched.cap,days:days.length};}
 
 function setCell(ws,ref,val,opt){const c=ws.getCell(ref);if(val!==undefined)c.value=val;if(opt){if(opt.font)c.font=opt.font;if(opt.align)c.alignment=opt.align;if(opt.nf)c.numFmt=opt.nf;if(opt.border)c.border=opt.border;if(opt.fill)c.fill=opt.fill;}return c;}
 function box(ws,range,border){ // 범위 전체 셀에 테두리
@@ -391,7 +421,7 @@ function refLine(ws,r,label,amount,qty,qtyLabel,bold){
   setCell(ws,`B${r}`,label,{font:fnt(10,bold),align:CENTER});
   ws.mergeCells(`C${r}:F${r}`);setCell(ws,`C${r}`,amount,{font:fnt(10,bold),nf:NUM,align:RIGHTV});
   ws.mergeCells(`G${r}:H${r}`);setCell(ws,`G${r}`,qty,{font:fnt(10,bold),nf:`#,##0"${qtyLabel}"`,align:RIGHTV});}
-function buildDaySheet(wb,row){
+function buildDaySheet(wb,row,opt){opt=opt||{};row._sched=opt.sched;
   const ws=wb.addWorksheet(sheetName(row.sales_date));
   ws.columns=[{width:5},{width:20.6},{width:11.6},{width:11.6},{width:11.6},{width:11.6},{width:11.6},{width:16},{width:3},{width:34}];
   ws.getRow(1).height=30;ws.getRow(2).height=30;for(let r=4;r<=19;r++)ws.getRow(r).height=30;ws.getRow(20).height=26;ws.getRow(21).height=26;ws.getRow(22).height=30;ws.getRow(23).height=48;
@@ -407,8 +437,10 @@ function buildDaySheet(wb,row){
   [...COLS,'H'].forEach(c=>setCell(ws,`${c}9`,{formula:`SUM(${c}5:${c}8)`},{font:fnt(10),align:RIGHTV}));
   setCell(ws,'J9',{formula:'H9=(C9+D9+E9+F9+G9)'},{font:fnt(11),align:CENTER,border:all(thin)});
   setCell(ws,'B10','탑승률',{font:fnt(10),align:CENTER});
-  COLS.forEach(c=>setCell(ws,`${c}10`,{formula:`${c}9/250`},{font:fnt(10),nf:PCT,align:RIGHTV}));
-  setCell(ws,'H10',{formula:'H9/1250'},{font:fnt(10),nf:PCT,align:RIGHTV});
+  const sch=(row._sched||makeSched());const cap=sch.cap;const nV=sch(row.sales_date).length;
+  COLS.forEach(c=>setCell(ws,`${c}10`,{formula:`${c}9/${cap}`},{font:fnt(10),nf:PCT,align:RIGHTV}));
+  if(nV)setCell(ws,'H10',{formula:`H9/${cap*nV}`},{font:fnt(10),nf:PCT,align:RIGHTV});else setCell(ws,'H10','휴무',{font:fnt(10),align:{horizontal:'center',vertical:'middle'}});
+  setCell(ws,'J10',`운항 ${nV}항차 × 정원 ${cap}${sch.isHoliday(row.sales_date)?' (공휴일)':''}`,{font:fnt(9),align:RIGHTV});
   setCell(ws,'B11','가평크루즈 매출',{font:fnt(10),align:CENTER});
   COLS.forEach((c,v)=>setCell(ws,`${c}11`,row[`v${v+1}_rev`]||0,{font:fnt(10),nf:NUM,align:RIGHTV}));
   setCell(ws,'H11',{formula:'C11+D11+E11+F11+G11'},{font:fnt(10,true),nf:NUM_,align:RIGHTV});
@@ -466,8 +498,9 @@ function bodyFooter(ws,denom,cvs,goods){
   ws.mergeCells('A25:B25');setCell(ws,'A25','매출 합계(운항+소매)',{font:fnt(11,true),align:CENTER});
   ws.mergeCells('C25:H25');setCell(ws,'C25',{formula:'C21+C24'},{font:fnt(14,true),nf:NUM_,align:RIGHTV});
   setCell(ws,'B12','탑승률',{font:fnt(10),align:CENTER});
-  COLS.forEach(c=>setCell(ws,`${c}12`,{formula:`${c}11/(250*${denom})`},{font:fnt(10),nf:PCT,align:RIGHTV}));
-  setCell(ws,'H12',{formula:`H11/(250*5*${denom})`},{font:fnt(10),nf:PCT,align:RIGHTV});
+  COLS.forEach((c,i)=>{const n=denom.perV[i];if(n)setCell(ws,`${c}12`,{formula:`${c}11/(${denom.cap}*${n})`},{font:fnt(10),nf:PCT,align:RIGHTV});else setCell(ws,`${c}12`,'-',{font:fnt(10),align:{horizontal:'center',vertical:'middle'}});});
+  if(denom.total)setCell(ws,'H12',{formula:`H11/(${denom.cap}*${denom.total})`},{font:fnt(10),nf:PCT,align:RIGHTV});else setCell(ws,'H12','휴무',{font:fnt(10),align:{horizontal:'center',vertical:'middle'}});
+  setCell(ws,'J12',`정원 ${denom.cap} × 운항 ${denom.total}항차 (항차별 ${denom.perV.join('/')}회)`,{font:fnt(9),align:RIGHTV});
   box(ws,'A4:H25',all(thin));
   ['A22','B22','C22'].forEach(r=>ws.getCell(r).border={...all(thin),top:med});
   ['A24','B24','C24'].forEach(r=>ws.getCell(r).border={...all(thin),bottom:med});
@@ -500,7 +533,7 @@ function buildWeekSheet(wb,monday,rowsByDate,opt){
   setCell(ws,'H13',{formula:'SUM(C13:G13)'},{font:fnt(10,true),nf:NUM_,align:RIGHTV});
   refLine(ws,14,'노쇼',{formula:sumRefN('C',12)},{formula:sumRefN('G',12)},'명');
   REF_ROWS.forEach(([dr,k],i)=>refLine(ws,15+i,`${k}(참고)`,{formula:sumRefN('C',dr)},{formula:sumRefN('G',dr)},QTY_LABEL[k]));
-  bodyFooter(ws,7,{formula:sumRefN('C',20)},{formula:sumRefN('C',21)});
+  bodyFooter(ws,denomFor(days,opt.sched),{formula:sumRefN('C',20)},{formula:sumRefN('C',21)});
   setCell(ws,'C19',{formula:sumRefN('C',17)},{font:fnt(10),nf:NUM,align:RIGHTV});
   setCell(ws,'C20',{formula:sumRefN('C',18)},{font:fnt(10),nf:NUM,align:RIGHTV});
   // 주석 (B28~)
@@ -517,13 +550,14 @@ function buildWeekSheet(wb,monday,rowsByDate,opt){
 
 /* ---------- 집계 ---------- */
 function aggregate(rows){ // rows: 배열
-  const a={pax:{},rev:[0,0,0,0,0],etc:0,hyo:0,cvs:0,goods:0,extra:0,pos:0,posN:0,noshow:0,noshowPax:0,days:rows.length};
+  const a={pax:{},rev:[0,0,0,0,0],runs:[0,0,0,0,0],etc:0,hyo:0,cvs:0,goods:0,extra:0,pos:0,posN:0,noshow:0,noshowPax:0,days:rows.length};
   PAX.forEach(k=>a.pax[k]=[0,0,0,0,0]);
-  rows.forEach(r=>{for(let v=0;v<5;v++){PAX.forEach(k=>a.pax[k][v]+=Number(r[`v${v+1}_${k}`]||0));a.rev[v]+=Number(r[`v${v+1}_rev`]||0);}
+  rows.forEach(r=>{for(let v=0;v<5;v++){PAX.forEach(k=>a.pax[k][v]+=Number(r[`v${v+1}_${k}`]||0));a.rev[v]+=Number(r[`v${v+1}_rev`]||0);if((r[`v${v+1}_status`]||'운항')==='운항')a.runs[v]++;}
     a.etc+=Number(r.etc_rev||0);a.hyo+=Number(r.hyojeong_rev||0);a.cvs+=Number(r.cvs_rev||0);a.goods+=Number(r.goods_rev||0);a.extra+=Number(r.extra_pax||0);
     a.noshow+=Number(r.noshow_rev||0);a.noshowPax+=Number(r.noshow_pax||0);
     if(r.pos_pax!=null&&r.pos_pax!==''){a.pos+=Number(r.pos_pax);a.posN++;}});
   a.items=itemsByKind(rows);
+  a.runsTotal=a.runs.reduce((s,x)=>s+x,0);
   a.paxV=[0,1,2,3,4].map(v=>PAX.reduce((s,k)=>s+a.pax[k][v],0));
   a.paxSum=a.paxV.reduce((s,x)=>s+x,0);a.paxTotal=a.paxSum+a.extra;
   a.cruise=a.rev.reduce((s,x)=>s+x,0);a.ops=a.cruise+a.noshow+a.etc+a.hyo;a.retail=a.cvs+a.goods;a.total=a.ops+a.retail;
@@ -531,7 +565,7 @@ function aggregate(rows){ // rows: 배열
 }
 
 /* ---------- 월간 시트: 월 합계 + 주차별 요약 ---------- */
-function buildMonthSheet(wb,ym,rowsByDate,weeks){
+function buildMonthSheet(wb,ym,rowsByDate,weeks,opt){opt=opt||{};
   const [y,m]=ym.split('-').map(Number);const dim=daysInMonth(ym);
   const rows=Object.keys(rowsByDate).filter(d=>d.startsWith(ym)).sort().map(d=>rowsByDate[d]);
   const a=aggregate(rows);
@@ -550,7 +584,8 @@ function buildMonthSheet(wb,ym,rowsByDate,weeks){
   setCell(ws,'H13',{formula:'SUM(C13:G13)'},{font:fnt(10,true),nf:NUM_,align:RIGHTV});
   refLine(ws,14,'노쇼',a.noshow,a.noshowPax,'명');
   REF_ROWS.forEach(([dr,k],i)=>refLine(ws,15+i,`${k}(참고)`,a.items[k].amount,a.items[k].qty,QTY_LABEL[k]));
-  bodyFooter(ws,dim,a.cvs,a.goods);
+  const mdays=[];for(let i=1;i<=dim;i++)mdays.push(ym+'-'+String(i).padStart(2,'0'));
+  bodyFooter(ws,denomFor(mdays,opt.sched),a.cvs,a.goods);
   setCell(ws,'C19',a.etc,{font:fnt(10),nf:NUM,align:RIGHTV});setCell(ws,'C20',a.hyo,{font:fnt(10),nf:NUM,align:RIGHTV});
   // 주차별 요약 (J4~)
   const hdr=['주차','기간','인원(명)','운항 매출','소매 매출','매출 합계'];
@@ -594,27 +629,27 @@ function weeksOfMonth(ym,rowsByDate){ // 월에 걸친 주차들 (그 달 날짜
     out.push({monday:mon,sunday:sun,label:weekLabel(mon),agg:aggregate(rows)});mon=addDays(mon,7);}
   return out;
 }
-function makeWeekWorkbook(ExcelJS,monday,rowsByDate,worklog){
+function makeWeekWorkbook(ExcelJS,monday,rowsByDate,worklog,sched){
   const wb=new ExcelJS.Workbook();wb.creator='가평크루즈 일일매출 앱';
   const rb={};for(let i=0;i<7;i++){const d=addDays(monday,i);rb[d]=rowsByDate[d]||Object.assign(emptyRow(d),{_missing:true});}
-  buildWeekSheet(wb,monday,rowsByDate);
-  for(let i=0;i<7;i++)buildDaySheet(wb,rb[addDays(monday,i)]);
+  buildWeekSheet(wb,monday,rowsByDate,{sched});
+  for(let i=0;i<7;i++)buildDaySheet(wb,rb[addDays(monday,i)],{sched});
   if(worklog&&worklog.length)buildWorklogSheet(wb,worklog,'업무일지');
   return wb;
 }
-function makeMonthWorkbook(ExcelJS,ym,rowsByDate,worklog){
+function makeMonthWorkbook(ExcelJS,ym,rowsByDate,worklog,sched){
   const wb=new ExcelJS.Workbook();wb.creator='가평크루즈 일일매출 앱';
   const weeks=weeksOfMonth(ym,rowsByDate);
-  buildMonthSheet(wb,ym,rowsByDate,weeks);
+  buildMonthSheet(wb,ym,rowsByDate,weeks,{sched});
   // 주차 시트는 그 달에 속한 날짜만 (다른 달 날짜는 0 처리) → 일별 시트도 그 달 날짜만 생성, 나머지는 빈 시트로 참조 유지
   const rb={};const dim=daysInMonth(ym);
   weeks.forEach(w=>{for(let i=0;i<7;i++){const d=addDays(w.monday,i);rb[d]=(d.startsWith(ym)&&rowsByDate[d])?rowsByDate[d]:Object.assign(emptyRow(d),{_missing:d.startsWith(ym),_other:!d.startsWith(ym)});}});
-  weeks.forEach(w=>buildWeekSheet(wb,w.monday,Object.fromEntries(Object.entries(rb).filter(([d])=>d.startsWith(ym)))));
-  Object.keys(rb).sort().forEach(d=>buildDaySheet(wb,rb[d]));
+  weeks.forEach(w=>buildWeekSheet(wb,w.monday,Object.fromEntries(Object.entries(rb).filter(([d])=>d.startsWith(ym))),{sched}));
+  Object.keys(rb).sort().forEach(d=>buildDaySheet(wb,rb[d],{sched}));
   if(worklog&&worklog.length)buildWorklogSheet(wb,worklog,'업무일지');
   return wb;
 }
-global.DSX={d2,iso,addDays,sheetName,kdate,mondayOf,weekLabel,weekFile,emptyRow,daysInMonth,aggregate,weeksOfMonth,makeWeekWorkbook,makeMonthWorkbook,itemsByKind,KINDS,QTY_LABEL,PAX,PAX_LABEL,WD};
+global.DSX={d2,iso,addDays,sheetName,kdate,mondayOf,weekLabel,weekFile,emptyRow,daysInMonth,aggregate,weeksOfMonth,makeWeekWorkbook,makeMonthWorkbook,itemsByKind,KINDS,QTY_LABEL,PAX,PAX_LABEL,WD,makeSched,denomFor,DEFAULT_SCHEDULE,DEFAULT_HOLIDAYS,ALL5};
 })(typeof window!=='undefined'?window:globalThis);
 </script>
 
@@ -622,7 +657,9 @@ global.DSX={d2,iso,addDays,sheetName,kdate,mondayOf,weekLabel,weekFile,emptyRow,
 /* ===================== 앱 본체 ===================== */
 (function(){
 const $=(s)=>document.querySelector(s), $$=(s)=>[...document.querySelectorAll(s)];
-const {d2,iso,addDays,mondayOf,weekLabel,weekFile,emptyRow,daysInMonth,aggregate,weeksOfMonth,KINDS,QTY_LABEL,PAX,PAX_LABEL,WD}=DSX;
+const {d2,iso,addDays,mondayOf,weekLabel,weekFile,emptyRow,daysInMonth,aggregate,weeksOfMonth,KINDS,QTY_LABEL,PAX,PAX_LABEL,WD,makeSched,denomFor,DEFAULT_SCHEDULE,DEFAULT_HOLIDAYS,ALL5}=DSX;
+let appCfg={schedule:null,holidays:null};let sched=makeSched();
+async function loadConfig(){try{const j=await api('설정조회',{});appCfg={schedule:j.config.schedule||null,holidays:j.config.holidays||null};}catch(e){}sched=makeSched(appCfg.schedule,appCfg.holidays);}
 const fmt=(n)=>Number(n||0).toLocaleString('ko-KR');
 const pct=(n)=>(Number(n||0)*100).toFixed(2)+'%';
 const fmtTs=(ts)=>ts?new Date(ts).toLocaleString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).replace(/\. /g,'-').replace('.','').replace(/-(\d\d):/,' $1:'):'';
@@ -659,7 +696,7 @@ async function api(op,payload,opts){opts=opts||{};
   clearTimeout(tm);
   let j;try{j=await r.json();}catch{throw new Error('서버 응답 오류 '+r.status);}
   if(!j.ok){if(j.login&&!opts.noLoginRedirect){clearSession();showLogin('login');$('#lgErr').textContent=j.error||'';}const e=new Error(j.error||('오류 '+r.status));e.status=r.status;throw e;}
-  if(j.user&&session){session.user=j.user;LS.set('dsSession_v1',session);}if(j.formEditDays)formDays=j.formEditDays;return j;
+  if(j.user&&session&&j.user.id===session.user.id){session.user=j.user;LS.set('dsSession_v1',session);setRolePill();}if(j.formEditDays)formDays=j.formEditDays;return j;
 }
 
 /* ---------- 대기열 (저장 실패 시 보관 → 재전송) ---------- */
@@ -721,9 +758,10 @@ function fillForm(row){row=row||emptyRow(dDate.value);$$('#tab-daily [data-f]').
   const z=(v)=>(v==null||v===0)?'':v;$('#fEtc').value=z(row.etc_rev);$('#fHyo').value=z(row.hyojeong_rev);$('#fCvs').value=z(row.cvs_rev);$('#fGoods').value=z(row.goods_rev);
   $('#fPosPax').value=row.pos_pax==null?'':row.pos_pax;$('#fEtcNote').value=row.etc_note||'';$('#fMemo').value=row.memo||'';fillItems(row.items);recalc();}
 function recalc(){const row=readForm();const a=aggregate([row]);
-  for(let v=1;v<=5;v++){$('#c'+v+'pax').textContent=fmt(a.paxV[v-1]);$('#c'+v+'rate').textContent=pct(a.paxV[v-1]/250);}
+  const cap=sched.cap,vs=sched(dDate.value||today());for(let v=1;v<=5;v++){$('#c'+v+'pax').textContent=fmt(a.paxV[v-1]);$('#c'+v+'rate').textContent=pct(a.paxV[v-1]/cap);}
   $('#tAdult').textContent=fmt(a.pax.adult.reduce((s,x)=>s+x,0));$('#tDisc').textContent=fmt(a.pax.disc.reduce((s,x)=>s+x,0));$('#tFree').textContent=fmt(a.pax.free.reduce((s,x)=>s+x,0));$('#tOnline').textContent=fmt(a.pax.online.reduce((s,x)=>s+x,0));
-  $('#tPax').textContent=fmt(a.paxSum);$('#tRate').textContent=pct(a.paxSum/1250);$('#tRev').textContent=fmt(a.cruise);
+  $('#tPax').textContent=fmt(a.paxSum);$('#tRate').textContent=vs.length?pct(a.paxSum/(cap*vs.length)):'휴무';$('#tRate').title=`정원 ${cap} × 운항 ${vs.length}항차${sched.isHoliday(dDate.value)?' (공휴일)':''}`;$('#tRev').textContent=fmt(a.cruise);
+  $('#dSched').textContent=vs.length?`오늘 스케줄: ${vs.map(v=>v+'항차').join('·')} (정원 ${cap})${sched.isHoliday(dDate.value)?' · 공휴일':''}`:'스케줄: 휴무일';
   $('#kOps').textContent=fmt(a.ops);$('#kRetail').textContent=fmt(a.retail);$('#kTotal').textContent=fmt(a.total);$('#kPax').textContent=fmt(a.paxSum);$('#cNpax').textContent=fmt(a.noshowPax);
   // 미운항/결항인데 숫자가 있으면 경고
   let warn='';for(let v=1;v<=5;v++){if(row[`v${v}_status`]!=='운항'&&(a.paxV[v-1]||a.rev[v-1]))warn+=`${v}항차 ${row[`v${v}_status`]}인데 인원/매출 입력됨. `;}
@@ -767,13 +805,16 @@ $('#wlAdd').onclick=async()=>{const d=dDate.value;const text=$('#wlText').value.
 const wDate=$('#wDate');wDate.value=today();
 $('#wPrev').onclick=()=>{wDate.value=addDays(wDate.value,-7);renderWeek();};$('#wNext').onclick=()=>{wDate.value=addDays(wDate.value,7);renderWeek();};$('#wThis').onclick=()=>{wDate.value=today();renderWeek();};
 wDate.onchange=renderWeek;$('#wReload').onclick=()=>renderWeek(true);
-function summaryTable(a,denomDays,titleCols){ // 양식 표 HTML
+function summaryTable(a,days,titleCols){ // 양식 표 HTML
+  const dn=denomFor(days,sched);
   const hdr=titleCols||['1항차<br><small>(10:00)</small>','2항차<br><small>(11:20)</small>','3항차<br><small>(13:30)</small>','4항차<br><small>(14:50)</small>','5항차<br><small>(16:10)</small>'];
   const rowP=(label,arr,bold)=>`<tr${bold?' class="tot"':''}><td class="l">${label}</td>${arr.map(x=>`<td class="num">${fmt(x)}</td>`).join('')}<td class="num"><b>${fmt(arr.reduce((s,x)=>s+x,0))}</b></td></tr>`;
   let h=`<table class="tbl"><thead><tr><th class="l" style="width:200px">구 분</th>${hdr.map(x=>`<th>${x}</th>`).join('')}<th>합 계</th></tr></thead><tbody>`;
   PAX.forEach(k=>h+=rowP(PAX_LABEL[k],a.pax[k]));
   h+=`<tr class="tot"><td class="l">합계(명)${a.extra?` <span class="hint">(항차 외 +${fmt(a.extra)})</span>`:''}</td>${a.paxV.map(x=>`<td class="num">${fmt(x)}</td>`).join('')}<td class="num">${fmt(a.paxTotal)}</td></tr>`;
-  h+=`<tr><td class="l">탑승률 <span class="hint">(250명×${denomDays}일)</span></td>${a.paxV.map(x=>`<td class="num">${pct(x/(250*denomDays))}</td>`).join('')}<td class="num">${pct(a.paxTotal/(250*5*denomDays))}</td></tr>`;
+  h+=`<tr><td class="l">운항 횟수 <span class="hint">(실제 / 예정)</span></td>${a.runs.map((x,i)=>`<td class="num">${x} <span class="hint">/ ${dn.perV[i]}</span></td>`).join('')}<td class="num"><b>${a.runsTotal}</b> <span class="hint">/ ${dn.total}</span></td></tr>`;
+  h+=`<tr><td class="l">운항율 <span class="hint">(실제 ÷ 예정)</span></td>${a.runs.map((x,i)=>`<td class="num">${dn.perV[i]?pct(x/dn.perV[i]):'-'}</td>`).join('')}<td class="num">${dn.total?pct(a.runsTotal/dn.total):'-'}</td></tr>`;
+  h+=`<tr><td class="l">탑승률 <span class="hint">(정원 ${dn.cap} × 운항 ${dn.total}항차)</span></td>${a.paxV.map((x,i)=>`<td class="num" title="운항 ${dn.perV[i]}회">${dn.perV[i]?pct(x/(dn.cap*dn.perV[i])):'-'}</td>`).join('')}<td class="num">${dn.total?pct(a.paxTotal/(dn.cap*dn.total)):'휴무'}</td></tr>`;
   h+=rowP('가평크루즈 매출',a.rev);
   const refRow=(label,amount,qty,ql,cls)=>`<tr${cls?' class="'+cls+'"':''}><td class="l">${label}</td><td class="num" colspan="4">${fmt(amount)}</td><td class="num" colspan="2">${fmt(qty)}${ql}</td></tr>`;
   h+=refRow('노쇼 <span class="hint">(매출 포함 · 인원 미포함)</span>',a.noshow,a.noshowPax,'명');
@@ -808,11 +849,11 @@ async function renderWeek(force){const mon=mondayOf(wDate.value||today());const 
   try{if(force||weekDays.some(d=>cache[d]===undefined&&worklogByDate[d]===undefined))await loadRange(mon,sun);}catch(e){toast(e.message,true);}
   const rows=weekDays.map(d=>cache[d]).filter(Boolean);const a=aggregate(rows);
   $('#wSub').textContent=`입력 ${rows.length}/7일 · 단위: 원, VAT포함`;
-  $('#wTable').innerHTML=summaryTable(a,7);$('#wDaily').innerHTML=dailyTable(weekDays);bindGoDay($('#wDaily'));
+  $('#wTable').innerHTML=summaryTable(a,weekDays);$('#wDaily').innerHTML=dailyTable(weekDays);bindGoDay($('#wDaily'));
   $('#wLog').innerHTML=worklogHtml(weekDays);}
 $('#wExcel').onclick=async()=>{const mon=mondayOf(wDate.value||today());try{await loadRange(mon,addDays(mon,6));}catch(e){toast(e.message,true);}
   const rb={};weekDays.forEach(d=>{if(cache[d])rb[d]=cache[d];});const wl=weekDays.flatMap(d=>worklogByDate[d]||[]);
-  const wb=DSX.makeWeekWorkbook(ExcelJS,mon,rb,wl);await download(wb,weekFile(mon));};
+  const wb=DSX.makeWeekWorkbook(ExcelJS,mon,rb,wl,sched);await download(wb,weekFile(mon));};
 async function download(wb,name){const buf=await wb.xlsx.writeBuffer();const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000);toast(name+' 다운로드');}
 
@@ -827,7 +868,7 @@ async function renderMonth(force){const ym=mMonth.value||today().slice(0,7);cons
   try{if(force||monthDays.some(d=>cache[d]===undefined&&worklogByDate[d]===undefined))await loadRange(monthDays[0],monthDays[dim-1]);}catch(e){toast(e.message,true);}
   const rows=monthDays.map(d=>cache[d]).filter(Boolean);const a=aggregate(rows);
   $('#mSub').textContent=`입력 ${rows.length}/${dim}일 · 단위: 원, VAT포함`;
-  $('#mTable').innerHTML=summaryTable(a,dim);
+  $('#mTable').innerHTML=summaryTable(a,monthDays);
   const rb={};monthDays.forEach(d=>{if(cache[d])rb[d]=cache[d];});const weeks=weeksOfMonth(ym,rb);
   let h=`<table class="tbl"><thead><tr><th>주차</th><th>기간</th><th>입력일</th><th>인원(명)</th><th>크루즈 매출</th><th>기타</th><th>효정1호</th><th>운항 합계</th><th>편의점</th><th>굿즈샵</th><th>소매 합계</th><th>매출 합계</th></tr></thead><tbody>`;
   weeks.forEach(w=>{const wa=w.agg;h+=`<tr><td class="c"><a href="#" data-goweek="${w.monday}">${w.label}</a></td><td class="c">${w.monday.slice(5).replace('-','/')}~${w.sunday.slice(5).replace('-','/')}</td><td class="num">${wa.days}</td><td class="num">${fmt(wa.paxTotal)}</td><td class="num">${fmt(wa.cruise)}</td><td class="num">${fmt(wa.etc)}</td><td class="num">${fmt(wa.hyo)}</td><td class="num"><b>${fmt(wa.ops)}</b></td><td class="num">${fmt(wa.cvs)}</td><td class="num">${fmt(wa.goods)}</td><td class="num"><b>${fmt(wa.retail)}</b></td><td class="num"><b>${fmt(wa.total)}</b></td></tr>`;});
@@ -840,7 +881,7 @@ async function renderMonth(force){const ym=mMonth.value||today().slice(0,7);cons
   $('#mLog').innerHTML=worklogHtml(monthDays,monthTagFilter);}
 $('#mExcel').onclick=async()=>{const ym=mMonth.value;const dim=daysInMonth(ym);try{await loadRange(ym+'-01',ym+'-'+String(dim).padStart(2,'0'));}catch(e){toast(e.message,true);}
   const rb={};monthDays.forEach(d=>{if(cache[d])rb[d]=cache[d];});const wl=monthDays.flatMap(d=>worklogByDate[d]||[]);
-  const wb=DSX.makeMonthWorkbook(ExcelJS,ym,rb,wl);await download(wb,`${ym.slice(2,4)}.${ym.slice(5)}_월간매출.xlsx`);};
+  const wb=DSX.makeMonthWorkbook(ExcelJS,ym,rb,wl,sched);await download(wb,`${ym.slice(2,4)}.${ym.slice(5)}_월간매출.xlsx`);};
 
 /* ============ 업무일지 검색 ============ */
 let logTagFilter=new Set();let logItems=[];
@@ -862,6 +903,7 @@ let tagDraft=[];
 function renderSettings(){$('#sUrl').value=cfg.url||'';$('#sDays').textContent=formDays;
   $('#sMe').textContent=session?`${session.user.name} (${session.user.email}) · 권한: ${session.user.role}`:'로그인 필요';
   $('#cardUsers').hidden=!isAdmin();if(isAdmin())loadUsers();
+  if(!$('#scMonth').value)$('#scMonth').value=today().slice(0,7);scDraft=null;hlDraft=null;renderSched();renderHolidays();
   tagDraft=tags.map(t=>({...t}));renderTagDraft();renderQueue();
   if(!$('#hFrom').value){$('#hFrom').value=addDays(today(),-7);$('#hTo').value=today();}}
 function renderTagDraft(){$('#sTagList').innerHTML=tagDraft.map((t,i)=>`<div class="row" style="margin:3px 0"><span class="tag" style="background:${esc(t.color)}">${esc(t.name)}</span><input type="color" value="${esc(t.color)}" data-ti="${i}"><button class="btn sm" data-up="${i}">▲</button><button class="btn sm" data-dn="${i}">▼</button><button class="btn sm danger" data-rm="${i}">삭제</button></div>`).join('');
@@ -874,6 +916,27 @@ $('#sTagSave').onclick=async()=>{if(!canEdit()){toast("태그 편집은 '수정'
 $('#sSave').onclick=async()=>{cfg={url:$('#sUrl').value.trim().replace(/\/$/,'')||DEFAULT_URL};LS.set('dsCfg_v2',cfg);$('#sMsg').textContent='확인 중…';try{const j=await api('진단',{});$('#sMsg').textContent=`연결 성공 · ${j.version}`;}catch(e){$('#sMsg').textContent='실패: '+e.message;}};
 $('#pwSave').onclick=async()=>{const c=$('#pwCur').value,n=$('#pwNew').value,n2=$('#pwNew2').value;if(n.length<6){toast('새 비밀번호는 6자 이상',true);return;}if(n!==n2){toast('새 비밀번호 확인이 다릅니다.',true);return;}
   try{await api('비밀번호변경',{current:c,next:n});$('#pwCur').value=$('#pwNew').value=$('#pwNew2').value='';toast('비밀번호가 변경되었습니다.');}catch(e){toast(e.message,true);}};
+/* 운항 스케줄 · 공휴일 편집 */
+let scDraft=null,hlDraft=null;
+const WDN=['일','월','화','수','목','금','토'];
+function scGet(){return scDraft||(scDraft=JSON.parse(JSON.stringify(appCfg.schedule||DEFAULT_SCHEDULE)));}
+function renderSched(){const sc=scGet();const ym=$('#scMonth').value||today().slice(0,7);$('#scCap').value=sc.cap||250;const mc=sc.months[ym];
+  $('#scState').textContent=mc?`${ym} 설정 있음`:`${ym} 설정 없음 → 매일 1~5항차로 계산 중 (아래에서 체크 후 저장하면 설정됨)`;
+  const cur=mc||{wd:[ALL5,ALL5,ALL5,ALL5,ALL5,ALL5,ALL5],hol:ALL5};
+  const rows=[...WDN.map((n,i)=>({label:n+'요일',key:i,arr:cur.wd[i]})),{label:'공휴일',key:'hol',arr:cur.hol}];
+  $('#scTable').innerHTML=`<thead><tr><th class="l">구분</th>${[1,2,3,4,5].map(v=>`<th>${v}항차</th>`).join('')}<th>운항</th></tr></thead><tbody>`+rows.map(r=>`<tr><td class="l"><b>${r.label}</b></td>${[1,2,3,4,5].map(v=>`<td class="c"><input type="checkbox" data-sc="${r.key}" data-v="${v}" ${r.arr.includes(v)?'checked':''} ${isAdmin()?'':'disabled'}></td>`).join('')}<td class="c">${r.arr.length?r.arr.length+'항차':'휴무'}</td></tr>`).join('')+'</tbody>';
+  $$('#scTable input').forEach(cb=>cb.onchange=()=>{const sc=scGet();const m=sc.months[ym]||(sc.months[ym]={wd:[ALL5,ALL5,ALL5,ALL5,ALL5,ALL5,ALL5].map(a=>a.slice()),hol:ALL5.slice()});
+    const k=cb.dataset.sc,v=+cb.dataset.v;const arr=k==='hol'?m.hol:m.wd[+k];const i=arr.indexOf(v);if(cb.checked&&i<0)arr.push(v);if(!cb.checked&&i>=0)arr.splice(i,1);arr.sort();renderSched();});
+  $$('#scSave,#scCopyPrev,#scClear,#hlSave,#hlAdd').forEach(b=>b.disabled=!isAdmin());}
+function renderHolidays(){const hl=hlDraft||(hlDraft=(appCfg.holidays||DEFAULT_HOLIDAYS).slice().sort());
+  $('#hlList').innerHTML=hl.map(d=>`<span class="tag" style="background:var(--blue)">${d}(${WDN[d2(d).getDay()]}) ${isAdmin()?`<span data-hdel="${d}" style="margin-left:4px;cursor:pointer">×</span>`:''}</span>`).join('')||'<span class="hint">없음</span>';
+  $$('#hlList [data-hdel]').forEach(x=>x.onclick=()=>{hlDraft=hlDraft.filter(d=>d!==x.dataset.hdel);renderHolidays();});}
+$('#scMonth').onchange=renderSched;$('#scCap').onchange=()=>{scGet().cap=Math.max(1,Number($('#scCap').value)||250);renderSched();};
+$('#scCopyPrev').onclick=()=>{const sc=scGet();const ym=$('#scMonth').value;const [y,m]=ym.split('-').map(Number);const prev=iso(new Date(y,m-2,1)).slice(0,7);if(!sc.months[prev]){toast(`${prev} 설정이 없습니다.`,true);return;}sc.months[ym]=JSON.parse(JSON.stringify(sc.months[prev]));renderSched();};
+$('#scClear').onclick=()=>{delete scGet().months[$('#scMonth').value];renderSched();};
+$('#scSave').onclick=async()=>{try{await api('설정저장',{key:'schedule',value:scGet()});appCfg.schedule=JSON.parse(JSON.stringify(scGet()));sched=makeSched(appCfg.schedule,appCfg.holidays);toast('스케줄 저장됨');recalc();}catch(e){toast(e.message,true);}};
+$('#hlAdd').onclick=()=>{const d=$('#hlNew').value;if(!d)return;if(!hlDraft.includes(d))hlDraft.push(d);hlDraft.sort();renderHolidays();};
+$('#hlSave').onclick=async()=>{try{await api('설정저장',{key:'holidays',value:hlDraft});appCfg.holidays=hlDraft.slice();sched=makeSched(appCfg.schedule,appCfg.holidays);toast('공휴일 저장됨');recalc();}catch(e){toast(e.message,true);}};
 /* 사용자 관리 */
 let users=[];
 async function loadUsers(){try{const j=await api('사용자목록',{});users=j.users;renderUsers();}catch(e){toast(e.message,true);}}
@@ -901,7 +964,7 @@ $('#suBtn').onclick=async()=>{$('#suErr').textContent='';const key=$('#suKey').v
 $('#mpBtn').onclick=async()=>{$('#mpErr').textContent='';const c=$('#mpCur').value,n=$('#mpNew').value,n2=$('#mpNew2').value;if(n.length<6){$('#mpErr').textContent='새 비밀번호는 6자 이상';return;}if(n!==n2){$('#mpErr').textContent='새 비밀번호 확인이 다릅니다.';return;}
   try{await api('비밀번호변경',{current:c,next:n});session.user.must_change_pw=false;LS.set('dsSession_v1',session);$('#mpCur').value=$('#mpNew').value=$('#mpNew2').value='';hideLogin();toast('비밀번호가 변경되었습니다.');await afterLogin();}
   catch(e){$('#mpErr').textContent=e.message;}};
-async function afterLogin(){setRolePill();await loadTags();flushQueue();showTab('daily');loadDay();}
+async function afterLogin(){setRolePill();await loadTags();await loadConfig();flushQueue();showTab('daily');loadDay();}
 buildGrid();setRolePill();setQueuePill();renderTagPickers();fillForm(null);
 (async()=>{
   let diag=null;try{diag=await api('진단',{},{noLoginRedirect:true});formDays=diag.formEditDays||1;}catch(e){toast(e.message,true);}
