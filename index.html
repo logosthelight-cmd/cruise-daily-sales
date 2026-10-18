@@ -141,6 +141,16 @@ table{border-collapse:collapse;width:100%}
       </div>
     </div>
     <div class="notice" id="dLock" hidden></div>
+    <details id="kkBox" style="margin-top:8px;border:1px dashed var(--hair);border-radius:10px;padding:8px 12px;background:var(--soft)">
+      <summary style="cursor:pointer;font-weight:600;color:var(--navy)">카톡 매출현황 붙여넣기 → 자동 입력</summary>
+      <textarea id="kkText" placeholder="단체 카톡의 '탑승객 및 매출현황' 글을 그대로 붙여넣으세요." style="margin-top:8px;min-height:120px;font-size:13px"></textarea>
+      <div class="row" style="margin-top:6px">
+        <button class="btn primary sm" id="kkApply">읽어서 채우기</button>
+        <label class="hint"><input type="checkbox" id="kkAuto" checked> 검증 통과 시 자동 저장</label>
+        <span class="hint">날짜는 글의 "10. 17.(토)"에서 읽고, 글에 없는 항차는 미운항으로, 무료승선 괄호 내용은 비고로 들어갑니다. 노쇼·참고 항목·기타·효정1호는 유지됩니다.</span>
+      </div>
+      <div id="kkResult" class="hint" style="margin-top:6px;white-space:pre-wrap"></div>
+    </details>
     <div class="tblwrap" style="margin-top:10px">
     <table class="tbl" id="dGrid">
       <thead><tr>
@@ -397,6 +407,40 @@ function emptyRow(date){const r={sales_date:date};for(let v=1;v<=5;v++){PAX.forE
 const KINDS=['단체','대관','야간운항','상품권'];const QTY_LABEL={단체:'명',대관:'명',야간운항:'명',상품권:'매'};
 function itemsByKind(rows){const o={};KINDS.forEach(k=>o[k]={n:0,amount:0,qty:0,names:[]});rows.forEach(r=>(r.items||[]).forEach(it=>{const b=o[it.kind];if(!b)return;b.n++;b.amount+=Number(it.amount||0);b.qty+=Number(it.qty||0);if(it.name)b.names.push(it.name);}));return o;}
 function daysInMonth(ym){const [y,m]=ym.split('-').map(Number);return new Date(y,m,0).getDate();}
+/* ---------- 카톡 매출현황 텍스트 파서 ---------- */
+// 입력 예: "10. 17.(토) 탑승객 및 매출현황" / "□ 1항차 청평호 : 총 52명 / 851,000원" / "• 우대요금 : 15명" / "• 무료승선 : 2명 (유아 2)" / "• 선내편의점 : 429,000원"
+function parseKakao(text,todayIso){
+  const num=(s)=>Number(String(s||'').replace(/[^\d]/g,''))||0;
+  const out={date:null,voy:{},cvs:null,goods:null,cafe:null,paxTotal:null,revTotal:null,storeTotal:null,grand:null,warnings:[],errors:[]};
+  const t=String(text||'').replace(/\r/g,'');
+  // 날짜: "10. 17.(토)" / "10.17(토)" / "10/17" / "2026-10-17"
+  let m=t.match(/(\d{4})[.\-\/]\s*(\d{1,2})[.\-\/]\s*(\d{1,2})/);let y,mo,d;
+  if(m){y=+m[1];mo=+m[2];d=+m[3];}else{m=t.match(/(\d{1,2})\s*[.\/]\s*(\d{1,2})\s*\.?\s*\(/)||t.match(/(\d{1,2})\s*월\s*(\d{1,2})\s*일/);
+    if(m){mo=+m[1];d=+m[2];const td=d2(todayIso||iso(new Date()));y=td.getFullYear();const cand=new Date(y,mo-1,d);if((cand-td)/86400000>7)y--;}}
+  if(mo&&d){const dt=new Date(y,mo-1,d);if(dt.getMonth()===mo-1)out.date=iso(dt);else out.errors.push('날짜가 올바르지 않습니다.');}else out.errors.push('날짜를 찾지 못했습니다. (예: 10. 17.(토))');
+  // 항차 블록
+  const re=/□\s*(\d)\s*항차[^\n]*?총\s*([\d,]+)\s*명\s*\/\s*([\d,]+)\s*원([\s\S]*?)(?=\n\s*[□■]|$)/g;let b;
+  while((b=re.exec(t))){const v=+b[1];if(v<1||v>5)continue;const body=b[4];const g=(label)=>{const x=body.match(new RegExp(label+'\\s*[:：]\\s*([\\d,]+)\\s*명\\s*(\\(([^)]*)\\))?'));return x?{n:num(x[1]),note:x[3]?x[3].trim():''}:null;};
+    const adult=g('일반(?:요금)?'),disc=g('우대(?:요금)?'),free=g('무료(?:승선)?'),online=g('온라인(?:예약)?');
+    const row={total:num(b[2]),rev:num(b[3]),adult:adult?adult.n:0,disc:disc?disc.n:0,free:free?free.n:0,online:online?online.n:0,note:[adult,disc,free,online].map(x=>x&&x.note).filter(Boolean).join(', ')};
+    const sum=row.adult+row.disc+row.free+row.online;if(sum!==row.total)out.warnings.push(`${v}항차 인원 합(${sum})이 표기 총 ${row.total}명과 다릅니다.`);
+    out.voy[v]=row;}
+  if(!Object.keys(out.voy).length)out.errors.push('항차 정보(□ N항차 … 총 N명 / N원)를 찾지 못했습니다.');
+  const money=(label)=>{const x=t.match(new RegExp(label+'[^\\n]*?[:：]\\s*([\\d,]+)\\s*원'));return x?num(x[1]):null;};
+  out.cvs=money('선내\\s*편의점');out.goods=money('(?:크루즈\\s*)?굿즈샵');out.cafe=money('마리나\\s*카페');out.storeTotal=money('스토어\\s*총\\s*매출');out.grand=money('전체\\s*매출');
+  const pt=t.match(/탑승인원[^\n]*?총\s*([\d,]+)\s*명\s*\/\s*([\d,]+)\s*원/);if(pt){out.paxTotal=num(pt[1]);out.revTotal=num(pt[2]);}
+  // 합계 검증
+  const vs=Object.values(out.voy);const sp=vs.reduce((a,r)=>a+r.total,0),sr=vs.reduce((a,r)=>a+r.rev,0);
+  if(out.paxTotal!=null&&sp!==out.paxTotal)out.warnings.push(`항차 인원 합(${sp})이 탑승인원 총 ${out.paxTotal}명과 다릅니다.`);
+  if(out.revTotal!=null&&sr!==out.revTotal)out.warnings.push(`항차 매출 합(${fmtNum(sr)})이 탑승 매출 ${fmtNum(out.revTotal)}원과 다릅니다.`);
+  if(out.storeTotal!=null&&(out.cvs||0)+(out.goods||0)!==out.storeTotal)out.warnings.push(`편의점+굿즈샵(${fmtNum((out.cvs||0)+(out.goods||0))})이 스토어 총 매출 ${fmtNum(out.storeTotal)}원과 다릅니다.`);
+  if(out.grand!=null){const g=sr+(out.cvs||0)+(out.goods||0)+(out.cafe||0);if(g!==out.grand)out.warnings.push(`항차+스토어+카페(${fmtNum(g)})이 전체 매출 ${fmtNum(out.grand)}원과 다릅니다.`);}
+  if(out.cvs==null)out.warnings.push('선내편의점 매출을 찾지 못했습니다.');if(out.goods==null)out.warnings.push('굿즈샵 매출을 찾지 못했습니다.');
+  return out;}
+function applyKakao(row,pk){ // 기존 행(row)에 파싱 결과를 덮어씀 (노쇼·참고항목·기타·효정·메모는 유지)
+  for(let v=1;v<=5;v++){const r=pk.voy[v];if(r){row[`v${v}_adult`]=r.adult;row[`v${v}_disc`]=r.disc;row[`v${v}_free`]=r.free;row[`v${v}_online`]=r.online;row[`v${v}_rev`]=r.rev;row[`v${v}_status`]='운항';row[`v${v}_note`]=r.note||null;}
+    else{PAX.forEach(k=>row[`v${v}_${k}`]=0);row[`v${v}_rev`]=0;row[`v${v}_status`]='미운항';row[`v${v}_note`]=null;}}
+  if(pk.cvs!=null)row.cvs_rev=pk.cvs;if(pk.goods!=null)row.goods_rev=pk.goods;return row;}
 /* ---------- 운항 스케줄 (탑승률 분모) ---------- */
 // schedule = {cap:250, months:{'YYYY-MM':{wd:[일,월,화,수,목,금,토 → 운항 항차 배열], hol:[공휴일 운항 항차]}}} — 설정 없는 달은 매일 5항차(기존 방식)
 // 규칙: 요일 배열이 비어 있으면(휴무) 공휴일이어도 휴무. 결항·미운항은 분모에서 빼지 않음.
@@ -653,7 +697,7 @@ function makeMonthWorkbook(ExcelJS,ym,rowsByDate,worklog,sched){
   if(worklog&&worklog.length)buildWorklogSheet(wb,worklog,'업무일지');
   return wb;
 }
-global.DSX={d2,iso,addDays,sheetName,kdate,mondayOf,weekLabel,weekFile,emptyRow,daysInMonth,aggregate,weeksOfMonth,makeWeekWorkbook,makeMonthWorkbook,itemsByKind,KINDS,QTY_LABEL,PAX,PAX_LABEL,WD,makeSched,denomFor,DEFAULT_SCHEDULE,DEFAULT_HOLIDAYS,ALL5,setSched:(f)=>{CUR_SCHED=f;}};
+global.DSX={d2,iso,addDays,sheetName,kdate,mondayOf,weekLabel,weekFile,emptyRow,daysInMonth,aggregate,weeksOfMonth,makeWeekWorkbook,makeMonthWorkbook,itemsByKind,KINDS,QTY_LABEL,PAX,PAX_LABEL,WD,makeSched,denomFor,DEFAULT_SCHEDULE,DEFAULT_HOLIDAYS,ALL5,setSched:(f)=>{CUR_SCHED=f;},parseKakao,applyKakao};
 })(typeof window!=='undefined'?window:globalThis);
 </script>
 
@@ -661,7 +705,7 @@ global.DSX={d2,iso,addDays,sheetName,kdate,mondayOf,weekLabel,weekFile,emptyRow,
 /* ===================== 앱 본체 ===================== */
 (function(){
 const $=(s)=>document.querySelector(s), $$=(s)=>[...document.querySelectorAll(s)];
-const {d2,iso,addDays,mondayOf,weekLabel,weekFile,emptyRow,daysInMonth,aggregate,weeksOfMonth,KINDS,QTY_LABEL,PAX,PAX_LABEL,WD,makeSched,denomFor,DEFAULT_SCHEDULE,DEFAULT_HOLIDAYS,ALL5}=DSX;
+const {d2,iso,addDays,mondayOf,weekLabel,weekFile,emptyRow,daysInMonth,aggregate,weeksOfMonth,KINDS,QTY_LABEL,PAX,PAX_LABEL,WD,makeSched,denomFor,DEFAULT_SCHEDULE,DEFAULT_HOLIDAYS,ALL5,parseKakao,applyKakao}=DSX;
 let appCfg={schedule:null,holidays:null};let sched=makeSched();
 async function loadConfig(){try{const j=await api('설정조회',{});appCfg={schedule:j.config.schedule||null,holidays:j.config.holidays||null};}catch(e){}sched=makeSched(appCfg.schedule,appCfg.holidays);DSX.setSched(sched);}
 const fmt=(n)=>Number(n||0).toLocaleString('ko-KR');
@@ -784,6 +828,21 @@ async function saveDay(){if(!session){showLogin('login');return;}const row=readF
   catch(e){if(e.status===403||e.status===400){toast(e.message,true);}else{enqueue('일일저장',{row});toast('서버 연결 실패 → 대기열에 보관했습니다 (자동 재전송).',true);}}
   btns.forEach(b=>b.disabled=false);}
 $('#dSave').onclick=saveDay;$('#dSave2').onclick=saveDay;
+$('#kkApply').onclick=async()=>{if(!session){showLogin('login');return;}const res=$('#kkResult');res.style.color='';
+  const pk=parseKakao($('#kkText').value,today());
+  if(pk.errors.length){res.style.color='var(--red)';res.textContent='읽기 실패: '+pk.errors.join(' ');return;}
+  const ago=Math.round((Date.parse(today())-Date.parse(pk.date))/86400000);
+  if(!canEdit()&&(ago<0||ago>=formDays)){res.style.color='var(--red)';res.textContent=`${pk.date} 은(는) '입력' 권한으로 입력할 수 없는 날짜입니다 (${formDays===1?'당일만':'최근 '+formDays+'일'}).`;return;}
+  dDate.value=pk.date;$('#dLock').hidden=true;
+  try{if(!cache[pk.date]||!worklogByDate[pk.date])await loadRange(pk.date,pk.date);}catch(e){}
+  const existing=cache[pk.date];
+  if(existing&&!confirm(`${pk.date} 에 이미 저장된 데이터가 있습니다 (${existing.updated_by||''}). 항차·편의점·굿즈샵 값을 카톡 내용으로 덮어쓸까요?\n(노쇼·참고 항목·기타·효정1호·메모는 유지됩니다)`)){res.textContent='취소됨';return;}
+  const row=applyKakao(existing?JSON.parse(JSON.stringify(existing)):emptyRow(pk.date),pk);
+  fillForm(row);renderWorklog();
+  const vs=Object.keys(pk.voy).map(v=>v+'항차').join('·');const lines=[`${pk.date} · ${vs} 읽음 · 편의점 ${pk.cvs==null?'-':fmt(pk.cvs)} · 굿즈샵 ${pk.goods==null?'-':fmt(pk.goods)}${pk.cafe!=null?' · (마리나카페 '+fmt(pk.cafe)+'원은 앱 항목이 아니라 제외)':''}`];
+  if(pk.warnings.length){res.style.color='var(--red)';lines.push('⚠ '+pk.warnings.join('\n⚠ '));lines.push('수치가 맞지 않아 자동 저장하지 않았습니다. 내용을 확인하고 저장 버튼을 눌러 주세요.');res.textContent=lines.join('\n');return;}
+  if($('#kkAuto').checked){await saveDay();lines.push('✔ 검증 통과 → 저장했습니다.');}else lines.push('검증 통과. 저장 버튼을 눌러 주세요.');
+  res.textContent=lines.join('\n');};
 
 /* ---------- 업무일지 (일일 탭) ---------- */
 let pickedTags=new Set();
