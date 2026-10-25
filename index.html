@@ -939,7 +939,7 @@ $('#wPrev').onclick=()=>{wDate.value=addDays(wDate.value,-7);renderWeek();};$('#
 wDate.onchange=renderWeek;$('#wReload').onclick=()=>renderWeek(true);
 function summaryTable(a,days,titleCols){ // 양식 표 HTML (1~5항차 + 추가 항차 열)
   const dn=denomFor(days,sched,a);const n=a.exNames.length;const NC=6+n;
-  const hdr=(titleCols||['1항차<br><small>(10:00)</small>','2항차<br><small>(11:20)</small>','3항차<br><small>(13:30)</small>','4항차<br><small>(14:50)</small>','5항차<br><small>(16:10)</small>']).concat(a.exNames.map(x=>`<span style="color:var(--blue)">${esc(x)}</span>${a.exTimes[x]?'<br><small>('+esc(a.exTimes[x])+')</small>':''}`));
+  const hdr=(titleCols||['1항차','2항차','3항차','4항차','5항차']).concat(a.exNames.map(x=>`<span style="color:var(--blue)">${esc(x)}</span>`));
   const vals=(arr,k)=>arr.concat(a.exNames.map(x=>a.ex[x][k]));
   const rowP=(label,arr,bold)=>`<tr${bold?' class="tot"':''}><td class="l">${label}</td>${arr.map(x=>`<td class="num">${fmt(x)}</td>`).join('')}<td class="num"><b>${fmt(arr.reduce((s,x)=>s+x,0))}</b></td></tr>`;
   let h=`<table class="tbl"><thead><tr><th class="l" style="width:200px">구 분</th>${hdr.map(x=>`<th>${x}</th>`).join('')}<th>합 계</th></tr></thead><tbody>`;
