@@ -126,6 +126,8 @@ table{border-collapse:collapse;width:100%}
 .rpt .wl .body{font-size:12.5px}
 .rpt .rf{display:flex;justify-content:space-between;margin-top:16px;padding-top:6px;border-top:1px solid var(--hair);font-size:11px;color:var(--steel)}
 .rpt .empty{padding:30px;text-align:center;color:var(--steel)}
+.rpt .pb{border-top:2px dashed var(--hair);margin:26px 0 18px}
+.rpt .tbl.vl td{white-space:normal;vertical-align:top}
 @media (max-width:720px){.rpt .kpi{grid-template-columns:repeat(3,1fr)}.rpt .two{grid-template-columns:1fr}}
 @media print{
   @page{size:A4 portrait;margin:11mm 11mm 12mm}
@@ -145,6 +147,7 @@ table{border-collapse:collapse;width:100%}
   .rpt .tag{border:1px solid #999;color:#111!important;background:#fff!important}
   .rpt h3{margin:10px 0 4px;font-size:12px;break-after:avoid}
   .rpt table,.rpt .memo,.rpt .wl{break-inside:avoid}
+  .rpt .pb{border:0;margin:0;height:0;break-before:page;page-break-before:always}
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
 </style>
@@ -154,6 +157,7 @@ table{border-collapse:collapse;width:100%}
   <div class="brand"><b>가평크루즈</b><span>크루즈 사업본부 일일매출</span></div>
   <nav>
     <button data-tab="daily" class="on">일일 입력</button>
+    <button data-tab="vlog">항차일지</button>
     <button data-tab="report">일일 보고</button>
     <button data-tab="week">주간 현황</button>
     <button data-tab="month">월간 현황</button>
@@ -250,6 +254,39 @@ table{border-collapse:collapse;width:100%}
       <label class="hint"><input type="checkbox" id="wlSplit"> 줄마다 별도 항목으로 추가</label>
       <span class="hint">태그를 눌러 선택 (여러 개 가능)</span>
     </div>
+  </div>
+</section>
+
+<!-- ================= 항차일지 ================= -->
+<section class="tab" id="tab-vlog">
+  <div class="card">
+    <div class="row between">
+      <div class="row">
+        <label class="f">일자<input type="date" id="vDate"></label>
+        <button class="btn sm" id="vPrev">◀ 전일</button>
+        <button class="btn sm" id="vToday">오늘</button>
+        <button class="btn sm" id="vNext">익일 ▶</button>
+        <span class="hint" id="vState"></span>
+        <span class="pill" id="vSched"></span>
+      </div>
+      <div class="row">
+        <label class="f">작성자<input type="text" id="vAuthor" placeholder="이름" style="width:120px"></label>
+        <button class="btn primary" id="vSave">저장</button>
+      </div>
+    </div>
+    <div class="notice" id="vLock" hidden></div>
+    <div class="hint" style="margin-top:6px">항차 목록은 일일 입력과 연동됩니다(1~5항차 + 그날 입력된 추가 항차, 운항 상태 표시). 탑승인원은 <b>탑승한 직원 수</b>입니다. 저장하면 일일 보고 2페이지 "항차일지 보고"에 표시됩니다.</div>
+    <div class="tblwrap" style="margin-top:10px">
+    <table class="tbl" id="vGrid">
+      <thead><tr>
+        <th class="c" style="width:118px">항차</th><th class="c" style="width:80px">운항</th><th class="c" style="width:90px">탑승인원<br><span class="hint" style="font-weight:500">(직원 수)</span></th><th class="l" style="min-width:160px">직원명</th><th class="l" style="min-width:300px">고객반응</th><th class="l" style="min-width:180px">비고</th>
+      </tr></thead>
+      <tbody id="vBody"></tbody>
+      <tfoot><tr class="tot"><td class="c" colspan="2">합계</td><td id="vTotStaff" class="num"></td><td colspan="3" class="l hint" id="vTotNote"></td></tr></tfoot>
+    </table>
+    </div>
+    <datalist id="vStaffList"></datalist>
+    <div class="row" style="justify-content:flex-end;margin-top:8px"><button class="btn primary" id="vSave2">저장</button></div>
   </div>
 </section>
 
@@ -859,6 +896,7 @@ let queue=LS.get('dsQueue_v1',[]);
 let tags=[];            // {name,sort,color}
 const cache={};         // date -> row
 let worklogByDate={};   // date -> [items]
+let voyagelogByDate={}; // date -> {sales_date,entries,updated_by,updated_at}
 let formDays=1;
 const role=()=>session?session.user.role:'';const canEdit=()=>role()==='수정'||role()==='관리';const isAdmin=()=>role()==='관리';const myName=()=>session?session.user.name:'';
 
@@ -897,9 +935,11 @@ window.addEventListener('beforeunload',e=>{if(queue.length){e.preventDefault();e
 
 /* ---------- 데이터 로드 ---------- */
 async function loadRange(from,to){const j=await api('일일조회',{from,to});
-  for(let d=from;d<=to;d=addDays(d,1)){delete cache[d];delete worklogByDate[d];}
+  for(let d=from;d<=to;d=addDays(d,1)){delete cache[d];delete worklogByDate[d];delete voyagelogByDate[d];}
   j.rows.forEach(r=>cache[r.sales_date]=r);
   j.worklog.forEach(w=>{(worklogByDate[w.sales_date]=worklogByDate[w.sales_date]||[]).push(w);});
+  (j.voyagelog||[]).forEach(v=>voyagelogByDate[v.sales_date]=v);
+  for(let d=from;d<=to;d=addDays(d,1))if(!voyagelogByDate[d])voyagelogByDate[d]=null;
   return j;}
 async function loadTags(){try{const j=await api('태그목록',{});tags=j.tags;}catch(e){if(!tags.length)tags=['크루즈 운항','굿즈샵','선내매점','대관','단체','매표','경비','매출분석','공문','기타'].map((n,i)=>({name:n,sort:i,color:'#162E54'}));}
   renderTagPickers();}
@@ -909,6 +949,7 @@ const tagChip=(n,on,small)=>`<span class="tag${on?'':' off'}${small?' small':''}
 /* ---------- 탭 ---------- */
 $$('nav button').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
 function showTab(t){$$('nav button').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));$$('section.tab').forEach(s=>s.classList.toggle('on',s.id==='tab-'+t));
+  if(t==='vlog'){$('#vDate').value=$('#dDate').value||today();loadVlog();}
   if(t==='report'){$('#rDate').value=$('#dDate').value||today();renderReport();}
   if(t==='week')renderWeek();if(t==='month')renderMonth();if(t==='settings')renderSettings();if(t==='log'){lgInit();if(!$('#lList').innerHTML)searchLog();}}
 
@@ -980,9 +1021,48 @@ async function saveDay(){if(!session){showLogin('login');return;}const row=readF
   btns.forEach(b=>b.disabled=false);}
 $('#dSave').onclick=saveDay;$('#dSave2').onclick=saveDay;
 
+/* ============ 항차일지 (항차별 탑승 직원·고객반응) ============ */
+const vDate=$('#vDate');
+const VOY_TIME=['10:00','11:20','13:30','14:50','16:10'];
+function vlogVoyages(d){ // 그날의 항차 목록: 1~5항차(일일입력 상태) + 추가 항차
+  const row=cache[d]||emptyRow(d);const vs=sched(d);const out=[];
+  for(let v=1;v<=5;v++){const st=row[`v${v}_status`]||'운항';const run=isRun(row,v);out.push({key:'v'+v,name:v+'항차',time:VOY_TIME[v-1],status:st!=='운항'?st:(run?'운항':'미운항'),run,scheduled:vs.includes(v)});}
+  (row.extra_voyages||[]).forEach(e=>{if(!e.name)return;out.push({key:'x:'+e.name,name:e.name,time:e.time||'',status:e.status||'운항',run:isRunEx(e),scheduled:true});});
+  return out;}
+function vlogStaffNames(){const set=new Set();Object.values(voyagelogByDate).forEach(v=>(v&&v.entries||[]).forEach(e=>String(e.staff||'').split(/[,、/·]/).forEach(n=>{n=n.trim();if(n)set.add(n);})));return [...set];}
+function buildVlogGrid(d){const tb=$('#vBody');tb.innerHTML='';const saved=voyagelogByDate[d];const ents={};((saved&&saved.entries)||[]).forEach(e=>ents[e.key]=e);
+  vlogVoyages(d).forEach(v=>{const e=ents[v.key]||{};const tr=document.createElement('tr');tr.dataset.key=v.key;tr.dataset.name=v.name;if(!v.run)tr.style.opacity='.6';
+    tr.innerHTML=`<td class="c"><b>${esc(v.name)}</b>${v.time?`<div class="hint">${esc(v.time)}</div>`:''}</td><td class="c ${v.run?'':'hint'}">${esc(v.status)}</td>
+      <td><input type="number" min="0" max="99" step="1" data-vk="staff_count" value="${e.staff_count||''}"></td>
+      <td><input type="text" data-vk="staff" list="vStaffList" value="${esc(e.staff||'')}" placeholder="예) 김철수, 박영희" style="text-align:left"></td>
+      <td><textarea data-vk="reaction" rows="2" style="min-height:44px;font-size:13px;padding:5px 7px">${esc(e.reaction||'')}</textarea></td>
+      <td><input type="text" data-vk="note" value="${esc(e.note||'')}" placeholder="특이사항" style="text-align:left"></td>`;
+    tb.appendChild(tr);});
+  // 저장돼 있지만 지금 항차 목록에 없는 항차(추가 항차 이름이 바뀐 경우 등)도 보여줌
+  ((saved&&saved.entries)||[]).forEach(e=>{if($(`#vBody tr[data-key="${CSS.escape(e.key)}"]`))return;const tr=document.createElement('tr');tr.dataset.key=e.key;tr.dataset.name=e.name;tr.style.background='#FFF8E6';
+    tr.innerHTML=`<td class="c"><b>${esc(e.name)}</b><div class="hint">일일입력에 없음</div></td><td class="c hint">—</td><td><input type="number" min="0" max="99" step="1" data-vk="staff_count" value="${e.staff_count||''}"></td><td><input type="text" data-vk="staff" list="vStaffList" value="${esc(e.staff||'')}" style="text-align:left"></td><td><textarea data-vk="reaction" rows="2" style="min-height:44px;font-size:13px;padding:5px 7px">${esc(e.reaction||'')}</textarea></td><td><input type="text" data-vk="note" value="${esc(e.note||'')}" style="text-align:left"></td>`;tb.appendChild(tr);});
+  $('#vStaffList').innerHTML=vlogStaffNames().map(n=>`<option value="${esc(n)}">`).join('');
+  $$('#vBody input,#vBody textarea').forEach(el=>{el.addEventListener('input',vlogRecalc);});vlogRecalc();}
+function vlogRecalc(){let t=0,n=0;$$('#vBody tr').forEach(tr=>{const c=Number(tr.querySelector('[data-vk=staff_count]').value||0);t+=c;if(c||tr.querySelector('[data-vk=staff]').value.trim()||tr.querySelector('[data-vk=reaction]').value.trim())n++;});$('#vTotStaff').textContent=fmt(t);$('#vTotNote').textContent=n?`${n}개 항차 기록`:'';}
+function readVlog(){return $$('#vBody tr').map(tr=>{const o={key:tr.dataset.key,name:tr.dataset.name};tr.querySelectorAll('[data-vk]').forEach(el=>{o[el.dataset.vk]=el.type==='number'?(el.value===''?0:Number(el.value)):el.value.trim();});return o;}).filter(o=>o.staff_count||o.staff||o.reaction||o.note);}
+async function loadVlog(){const d=vDate.value;if(!d)return;$('#vLock').hidden=true;
+  try{if(!cache[d]||voyagelogByDate[d]===undefined)await loadRange(d,d);}catch(e){toast(e.message,true);}
+  if(!$('#vAuthor').value)$('#vAuthor').value=LS.get('dsAuthor_v1','')||myName();
+  buildVlogGrid(d);const vs=sched(d);$('#vSched').textContent=vs.length?`스케줄: ${vs.map(v=>v+'항차').join('·')}${sched.isHoliday(d)?' · 공휴일':''}`:'스케줄: 휴무일';
+  const ago=Math.round((Date.parse(today())-Date.parse(d))/86400000);
+  if(!canEdit()&&(ago<0||ago>=formDays)){$('#vLock').hidden=false;$('#vLock').textContent=ago<0?'미래 날짜는 입력할 수 없습니다.':`'입력' 권한은 ${formDays===1?'당일':'오늘 포함 최근 '+formDays+'일'}만 기록·수정할 수 있습니다.`;}
+  const sv=voyagelogByDate[d];$('#vState').textContent=sv?`저장됨 (${fmtTs(sv.updated_at)} ${sv.updated_by||''})`:(cache[d]?'미작성':'미작성 (일일 입력도 아직 없음)');}
+async function saveVlog(){if(!session){showLogin('login');return;}const d=vDate.value;const author=$('#vAuthor').value.trim();if(!author){toast('작성자 이름을 입력하세요.',true);$('#vAuthor').focus();return;}
+  const entries=readVlog();if(!entries.length){toast('기록할 내용이 없습니다.',true);return;}LS.set('dsAuthor_v1',author);
+  const btns=[$('#vSave'),$('#vSave2')];btns.forEach(b=>b.disabled=true);
+  try{const j=await api('항차일지저장',{sales_date:d,entries,author,device_id:deviceId});voyagelogByDate[d]=j.item;toast('항차일지가 저장되었습니다.');$('#vState').textContent=`저장됨 (${fmtTs(j.item.updated_at)} ${j.item.updated_by||''})`;}
+  catch(e){if(e.status===403||e.status===400)toast(e.message,true);else{enqueue('항차일지저장',{sales_date:d,entries,author,device_id:deviceId});toast('서버 연결 실패 → 대기열에 보관했습니다 (자동 재전송).',true);}}
+  btns.forEach(b=>b.disabled=false);}
+vDate.onchange=loadVlog;$('#vPrev').onclick=()=>{vDate.value=addDays(vDate.value,-1);loadVlog();};$('#vNext').onclick=()=>{vDate.value=addDays(vDate.value,1);loadVlog();};$('#vToday').onclick=()=>{vDate.value=today();loadVlog();};
+$('#vSave').onclick=saveVlog;$('#vSave2').onclick=saveVlog;
+
 /* ============ 일일 보고 (경영진 보고용) ============ */
 const rDate=$('#rDate');
-const VOY_TIME=['10:00','11:20','13:30','14:50','16:10'];
 async function renderReport(force){const d=rDate.value||today();rDate.value=d;const el=$('#rpt');$('#rState').textContent='불러오는 중…';
   try{if(force||!cache[d]||!worklogByDate[d])await loadRange(d,d);}catch(e){toast(e.message,true);}
   const row=cache[d];const items=worklogByDate[d]||[];const dt=d2(d);const hol=sched.isHoliday(d);const vs=sched(d);const cap=sched.cap;
@@ -1019,6 +1099,16 @@ async function renderReport(force){const d=rDate.value||today();rDate.value=d;co
   if(!refH&&!row.memo)h=h.replace('<div class="two"><div>','<div class="two" style="grid-template-columns:1fr;max-width:460px"><div>');
   if(items.length)h+=`<h3>주요 업무 · 특이사항</h3><div>${items.map(it=>`<div class="wl"><div class="body">${(it.tags||[]).map(t=>tagChip(t,true,true)).join('')}<div>${esc(it.content)}</div></div></div>`).join('')}</div>`;
   h+=`<div class="rf"><span>가평크루즈 크루즈 사업본부 · 일일매출 시스템</span><span>출력 ${fmtTs(new Date().toISOString())}</span></div>`;
+  // ---- 2페이지: 항차일지 보고 ----
+  const vl=voyagelogByDate[d];const ents=(vl&&vl.entries)||[];
+  if(ents.length){const voy=vlogVoyages(d);const order={};voy.forEach((v,i)=>order[v.key]=i);const byKey={};voy.forEach(v=>byKey[v.key]=v);
+    const list=ents.slice().sort((x,y)=>(order[x.key]??99)-(order[y.key]??99));const tot=list.reduce((t,e)=>t+Number(e.staff_count||0),0);
+    const paxOf=(k)=>{if(k.startsWith('v')){const v=+k.slice(1);return a.paxV[v-1];}const nm=k.slice(2);return a.ex[nm]?a.ex[nm].paxV:0;};
+    h+=`<div class="pb"></div><div class="rh"><div><h1>항차일지 보고</h1><div class="sub">가평크루즈 · 항차별 탑승 직원 · 고객반응</div></div><div class="date"><b>${dateKo}</b><span>작성 ${esc(vl.updated_by||'')} · ${esc(fmtTs(vl.updated_at))}</span></div></div>`;
+    h+=`<table class="tbl vl"><thead><tr><th class="c" style="width:76px">항차</th><th class="c" style="width:52px">시간</th><th class="c" style="width:54px">운항</th><th class="c" style="width:62px">탑승객<br>(명)</th><th class="c" style="width:62px">탑승<br>직원 수</th><th class="l" style="width:120px">직원명</th><th class="l">고객반응</th><th class="l" style="width:110px">비고</th></tr></thead><tbody>`;
+    list.forEach(e=>{const v=byKey[e.key];h+=`<tr><td class="c"><b>${esc(e.name)}</b></td><td class="c">${v?esc(v.time):''}</td><td class="c">${v?esc(v.status):'-'}</td><td class="num">${v?fmt(paxOf(e.key)):'-'}</td><td class="num">${e.staff_count?fmt(e.staff_count):'-'}</td><td class="l">${esc(e.staff||'')}</td><td class="l" style="white-space:pre-wrap">${esc(e.reaction||'')}</td><td class="l" style="white-space:pre-wrap">${esc(e.note||'')}</td></tr>`;});
+    h+=`<tr class="tot"><td class="c" colspan="3">합계</td><td class="num">${fmt(a.paxSum)}</td><td class="num">${fmt(tot)}</td><td class="l hint" colspan="3">${list.length}개 항차 기록</td></tr></tbody></table>`;
+    h+=`<div class="rf"><span>가평크루즈 크루즈 사업본부 · 일일매출 시스템</span><span>2 / 2</span></div>`;}
   el.innerHTML=h;$('#rState').textContent=`저장됨 (${fmtTs(row.updated_at)} ${row.updated_by||''})`;}
 rDate.onchange=()=>renderReport();$('#rPrev').onclick=()=>{rDate.value=addDays(rDate.value||today(),-1);renderReport();};$('#rNext').onclick=()=>{rDate.value=addDays(rDate.value||today(),1);renderReport();};
 $('#rToday').onclick=()=>{rDate.value=today();renderReport();};$('#rReload').onclick=()=>renderReport(true);
