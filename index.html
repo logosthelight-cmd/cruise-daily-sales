@@ -203,13 +203,13 @@ table{border-collapse:collapse;width:100%}
     <div class="tblwrap" style="margin-top:10px">
     <table class="tbl" id="dGrid">
       <thead><tr>
-        <th class="c" style="width:118px">항차</th><th class="c" style="width:92px">운항</th>
+        <th class="c" style="width:80px">항차</th><th class="c" style="width:132px">상품</th><th class="c" style="width:92px">운항</th>
         <th>현장일반</th><th>현장우대</th><th>현장무료</th><th>온라인</th><th>합계(명)</th><th>탑승률</th><th style="min-width:120px">가평크루즈 매출</th><th class="l" style="min-width:160px">비고</th>
       </tr></thead>
       <tbody id="dBody"></tbody>
       <tfoot>
-        <tr class="tot"><td class="c" colspan="2">운항합계</td><td id="tAdult" class="num"></td><td id="tDisc" class="num"></td><td id="tFree" class="num"></td><td id="tOnline" class="num"></td><td id="tPax" class="num"></td><td id="tRate" class="num"></td><td id="tRev" class="num"></td><td></td></tr>
-        <tr class="noshow"><td class="c"><b>노쇼</b></td><td class="c hint">—</td><td colspan="4"><div class="row" style="gap:6px"><span class="hint">인원</span><input type="number" min="0" step="1" data-f="noshow_pax" style="width:90px;text-align:right"><span class="hint">명 (운항합계 인원 미포함)</span></div></td><td class="calc num" id="cNpax">0</td><td class="calc">—</td><td><input type="number" min="0" step="1" data-f="noshow_rev" placeholder="노쇼 매출"></td><td class="hint">운항 매출 합계에 포함 (운항합계 매출 미포함)</td></tr>
+        <tr class="tot"><td class="c" colspan="3">운항합계</td><td id="tAdult" class="num"></td><td id="tDisc" class="num"></td><td id="tFree" class="num"></td><td id="tOnline" class="num"></td><td id="tPax" class="num"></td><td id="tRate" class="num"></td><td id="tRev" class="num"></td><td></td></tr>
+        <tr class="noshow"><td class="c"><b>노쇼</b></td><td class="c hint">—</td><td class="c hint">—</td><td colspan="4"><div class="row" style="gap:6px"><span class="hint">인원</span><input type="number" min="0" step="1" data-f="noshow_pax" style="width:90px;text-align:right"><span class="hint">명 (운항합계 인원 미포함)</span></div></td><td class="calc num" id="cNpax">0</td><td class="calc">—</td><td><input type="number" min="0" step="1" data-f="noshow_rev" placeholder="노쇼 매출"></td><td class="hint">운항 매출 합계에 포함 (운항합계 매출 미포함)</td></tr>
       </tfoot>
     </table>
     </div>
@@ -279,10 +279,10 @@ table{border-collapse:collapse;width:100%}
     <div class="tblwrap" style="margin-top:10px">
     <table class="tbl" id="vGrid">
       <thead><tr>
-        <th class="c" style="width:118px">항차</th><th class="c" style="width:80px">운항</th><th class="c" style="width:90px">탑승인원<br><span class="hint" style="font-weight:500">(직원 수)</span></th><th class="c" style="min-width:160px">직원명</th><th class="c" style="min-width:300px">고객반응</th><th class="c" style="min-width:180px">비고</th>
+        <th class="c" style="width:80px">항차</th><th class="c" style="width:120px">상품</th><th class="c" style="width:80px">운항</th><th class="c" style="width:90px">탑승인원<br><span class="hint" style="font-weight:500">(직원 수)</span></th><th class="c" style="min-width:160px">직원명</th><th class="c" style="min-width:300px">고객반응</th><th class="c" style="min-width:180px">비고</th>
       </tr></thead>
       <tbody id="vBody"></tbody>
-      <tfoot><tr class="tot"><td class="c" colspan="2">합계</td><td id="vTotStaff" class="num"></td><td colspan="3" class="l hint" id="vTotNote"></td></tr></tfoot>
+      <tfoot><tr class="tot"><td class="c" colspan="3">합계</td><td id="vTotStaff" class="num"></td><td colspan="3" class="l hint" id="vTotNote"></td></tr></tfoot>
     </table>
     </div>
     <datalist id="vStaffList"></datalist>
@@ -432,6 +432,9 @@ table{border-collapse:collapse;width:100%}
       <button class="btn primary sm" id="scSave">스케줄 저장</button>
     </div>
     <p class="hint">설정이 없는 달은 매일 1~5항차 운항으로 계산합니다. 요일을 전부 해제하면 그 요일은 휴무(공휴일이어도 휴무). 결항·미운항은 분모에서 빼지 않습니다.</p>
+    <h3>항차별 상품 · 시간 규칙 <span class="hint">(일일 입력 "상품" 열 자동 입력 · 비우면 기본값 사용 · 편집은 관리자)</span></h3>
+    <div class="tblwrap"><table class="tbl" id="prTable" style="max-width:1100px"></table></div>
+    <div class="row" style="margin-top:8px"><button class="btn primary sm" id="prSave">상품 규칙 저장</button><button class="btn sm" id="prReset">기본값으로</button><span class="hint">기본: 1~5항차 청평호투어 (10:00/11:20/13:30/14:50/16:10), 월·화·목 3항차 = 섬섬투어 13:30. 날짜별로 다르면 일일 입력에서 직접 고치면 됩니다(고친 값은 그 날짜에만 저장).</span></div>
     <h3>공휴일 목록</h3>
     <div id="hlList" style="margin-bottom:6px"></div>
     <div class="row"><input type="date" id="hlNew"><button class="btn sm" id="hlAdd">추가</button><button class="btn primary sm" id="hlSave">공휴일 저장</button><span class="hint">2026년 법정공휴일(대체공휴일 포함)이 기본으로 들어 있습니다.</span></div>
@@ -523,7 +526,7 @@ function kdate(isoStr){const d=d2(isoStr);return `${d.getFullYear()}년 ${String
 function mondayOf(isoStr){const d=d2(isoStr);const k=(d.getDay()+6)%7;d.setDate(d.getDate()-k);return iso(d);}
 function weekLabel(monday){const d=d2(monday);return `${String(d.getMonth()+1).padStart(2,'0')}월${Math.ceil(d.getDate()/7)}주차`;}
 function weekFile(monday){const d=d2(monday);return `${String(d.getFullYear()).slice(2)}.${String(d.getMonth()+1).padStart(2,'0')}${Math.ceil(d.getDate()/7)}주차_주간매출.xlsx`;}
-function emptyRow(date){const r={sales_date:date};for(let v=1;v<=5;v++){PAX.forEach(k=>r[`v${v}_${k}`]=0);r[`v${v}_rev`]=0;r[`v${v}_status`]='운항';r[`v${v}_note`]=null;}
+function emptyRow(date){const r={sales_date:date};for(let v=1;v<=5;v++){PAX.forEach(k=>r[`v${v}_${k}`]=0);r[`v${v}_rev`]=0;r[`v${v}_status`]='운항';r[`v${v}_note`]=null;r[`v${v}_product`]=null;r[`v${v}_time`]=null;}
   r.etc_rev=0;r.hyojeong_rev=0;r.cvs_rev=0;r.goods_rev=0;r.extra_pax=0;r.extra_pax_note=null;r.pos_pax=null;r.memo=null;r.noshow_rev=0;r.noshow_pax=0;r.etc_note=null;r.items=[];r.extra_voyages=[];return r;}
 const KINDS=['단체','대관','야간운항','상품권'];const QTY_LABEL={단체:'명',대관:'명',야간운항:'명',상품권:'매'};
 function itemsByKind(rows){const o={};KINDS.forEach(k=>o[k]={n:0,amount:0,qty:0,names:[]});rows.forEach(r=>(r.items||[]).forEach(it=>{const b=o[it.kind];if(!b)return;b.n++;b.amount+=Number(it.amount||0);b.qty+=Number(it.qty||0);if(it.name)b.names.push(it.name);}));return o;}
@@ -586,6 +589,15 @@ function applyKakao(row,pk){ // 기존 행(row)에 파싱 결과를 덮어씀 (�
 // 규칙: 요일 배열이 비어 있으면(휴무) 공휴일이어도 휴무. 결항·미운항은 분모에서 빼지 않음.
 const ALL5=[1,2,3,4,5];
 const DEFAULT_SCHEDULE={cap:250,months:{'2026-10':{wd:[ALL5,[1,2,3],[1,2,3],[],[1,2,3],ALL5,ALL5],hol:ALL5}}};
+// 항차별 상품·시간 규칙 (v2.7): base = 기본, wd[요일] = 요일별 덮어쓰기, hol = 공휴일 덮어쓰기 (요일 규칙보다 우선)
+const DEFAULT_PRODUCTS={base:{1:{name:'청평호투어',time:'10:00'},2:{name:'청평호투어',time:'11:20'},3:{name:'청평호투어',time:'13:30'},4:{name:'청평호투어',time:'14:50'},5:{name:'청평호투어',time:'16:10'}},
+  wd:{1:{3:{name:'섬섬투어',time:'13:30'}},2:{3:{name:'섬섬투어',time:'13:30'}},4:{3:{name:'섬섬투어',time:'13:30'}}},hol:{}};
+function makeProd(products,holidays){const pr=products||DEFAULT_PRODUCTS;const hs=new Set(holidays||DEFAULT_HOLIDAYS);
+  const f=(date,v)=>{const b=(pr.base||{})[v]||DEFAULT_PRODUCTS.base[v];let o={name:b.name||'',time:b.time||''};
+    const w=((pr.wd||{})[d2(date).getDay()]||{})[v];if(w){if(w.name)o.name=w.name;if(w.time)o.time=w.time;}
+    if(hs.has(date)){const h=(pr.hol||{})[v];if(h){if(h.name)o.name=h.name;if(h.time)o.time=h.time;}}return o;};
+  return f;}
+function voyProduct(row,v,prod){const r=(prod||makeProd())(row.sales_date,v);return {name:row[`v${v}_product`]||r.name,time:row[`v${v}_time`]||r.time};}
 const DEFAULT_HOLIDAYS=['2026-01-01','2026-02-16','2026-02-17','2026-02-18','2026-03-01','2026-03-02','2026-05-05','2026-05-24','2026-05-25','2026-06-03','2026-06-06','2026-08-15','2026-08-17','2026-09-24','2026-09-25','2026-09-26','2026-10-03','2026-10-05','2026-10-09','2026-12-25'];
 function makeSched(schedule,holidays){const sc=schedule||DEFAULT_SCHEDULE;const hs=new Set(holidays||DEFAULT_HOLIDAYS);const cap=Number(sc.cap)||250;
   const f=(date)=>{const mc=(sc.months||{})[date.slice(0,7)];if(!mc)return ALL5;const wd=(mc.wd||[])[d2(date).getDay()]||[];if(!wd.length)return [];return hs.has(date)?(mc.hol||[]):wd;};
@@ -870,7 +882,7 @@ function makeMonthWorkbook(ExcelJS,ym,rowsByDate,worklog,sched){
   if(worklog&&worklog.length)buildWorklogSheet(wb,worklog,'업무일지');
   return wb;
 }
-global.DSX={d2,iso,addDays,sheetName,kdate,mondayOf,weekLabel,weekFile,emptyRow,daysInMonth,aggregate,weeksOfMonth,makeWeekWorkbook,makeMonthWorkbook,itemsByKind,KINDS,QTY_LABEL,PAX,PAX_LABEL,WD,makeSched,denomFor,DEFAULT_SCHEDULE,DEFAULT_HOLIDAYS,ALL5,setSched:(f)=>{CUR_SCHED=f;},parseKakao,applyKakao,extrasOf,isRunEx,isRun};
+global.DSX={d2,iso,addDays,sheetName,kdate,mondayOf,weekLabel,weekFile,emptyRow,daysInMonth,aggregate,weeksOfMonth,makeWeekWorkbook,makeMonthWorkbook,itemsByKind,KINDS,QTY_LABEL,PAX,PAX_LABEL,WD,makeSched,denomFor,DEFAULT_SCHEDULE,DEFAULT_HOLIDAYS,ALL5,setSched:(f)=>{CUR_SCHED=f;},parseKakao,applyKakao,extrasOf,isRunEx,isRun,DEFAULT_PRODUCTS,makeProd,voyProduct};
 })(typeof window!=='undefined'?window:globalThis);
 </script>
 
@@ -878,9 +890,9 @@ global.DSX={d2,iso,addDays,sheetName,kdate,mondayOf,weekLabel,weekFile,emptyRow,
 /* ===================== 앱 본체 ===================== */
 (function(){
 const $=(s)=>document.querySelector(s), $$=(s)=>[...document.querySelectorAll(s)];
-const {d2,iso,addDays,mondayOf,weekLabel,weekFile,emptyRow,daysInMonth,aggregate,weeksOfMonth,KINDS,QTY_LABEL,PAX,PAX_LABEL,WD,makeSched,denomFor,DEFAULT_SCHEDULE,DEFAULT_HOLIDAYS,ALL5,parseKakao,applyKakao,isRun,isRunEx}=DSX;
-let appCfg={schedule:null,holidays:null};let sched=makeSched();
-async function loadConfig(){try{const j=await api('설정조회',{});appCfg={schedule:j.config.schedule||null,holidays:j.config.holidays||null};}catch(e){}sched=makeSched(appCfg.schedule,appCfg.holidays);DSX.setSched(sched);}
+const {d2,iso,addDays,mondayOf,weekLabel,weekFile,emptyRow,daysInMonth,aggregate,weeksOfMonth,KINDS,QTY_LABEL,PAX,PAX_LABEL,WD,makeSched,denomFor,DEFAULT_SCHEDULE,DEFAULT_HOLIDAYS,ALL5,parseKakao,applyKakao,isRun,isRunEx,DEFAULT_PRODUCTS,makeProd,voyProduct}=DSX;
+let appCfg={schedule:null,holidays:null,products:null};let sched=makeSched();let prod=makeProd();
+async function loadConfig(){try{const j=await api('설정조회',{});appCfg={schedule:j.config.schedule||null,holidays:j.config.holidays||null,products:j.config.products||null};}catch(e){}sched=makeSched(appCfg.schedule,appCfg.holidays);prod=makeProd(appCfg.products,appCfg.holidays);DSX.setSched(sched);}
 const fmt=(n)=>Number(n||0).toLocaleString('ko-KR');
 const pct=(n)=>(Number(n||0)*100).toFixed(2)+'%';
 const fmtTs=(ts)=>ts?new Date(ts).toLocaleString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).replace(/\. /g,'-').replace('.','').replace(/-(\d\d):/,' $1:'):'';
@@ -956,12 +968,13 @@ function showTab(t){$$('nav button').forEach(b=>b.classList.toggle('on',b.datase
 /* ============ 일일 입력 ============ */
 const dDate=$('#dDate');dDate.value=today();
 function buildGrid(){const tb=$('#dBody');tb.innerHTML='';
-  for(let v=1;v<=5;v++){const tr=document.createElement('tr');tr.innerHTML=`<td class="c"><b>${v}항차</b><div class="hint">${['10:00','11:20','13:30','14:50','16:10'][v-1]}</div></td>
+  for(let v=1;v<=5;v++){const tr=document.createElement('tr');tr.innerHTML=`<td class="c"><b>${v}항차</b></td>
+   <td style="white-space:normal"><input type="text" data-f="v${v}_product" placeholder="상품명" style="display:block;width:100%;text-align:left;font-weight:600;font-size:12px;padding:4px 5px"><input type="text" data-f="v${v}_time" placeholder="시간 10:00" style="display:block;width:100%;text-align:left;margin-top:3px;font-size:11px;padding:3px 5px"></td>
    <td><select data-f="v${v}_status"><option>운항</option><option>미운항</option><option>결항</option></select></td>
    ${PAX.map(k=>`<td><input type="number" min="0" step="1" data-f="v${v}_${k}"></td>`).join('')}
    <td class="calc num" id="c${v}pax">0</td><td class="calc num" id="c${v}rate">0.00%</td>
    <td><input type="number" min="0" step="1" data-f="v${v}_rev"></td><td><input type="text" data-f="v${v}_note" placeholder="예) 기상악화 결항"></td>`;tb.appendChild(tr);}
-  const xa=document.createElement('tr');xa.id='xvAddRow';xa.innerHTML=`<td colspan="10" class="l"><button class="btn sm" type="button" id="xvAdd">＋ 항차 추가 (특별항차·야간운항·꽃페스타 등)</button> <span class="hint">항차명·시간 직접 입력 · 인원·매출은 가평크루즈 매출·합계에 포함, 탑승률 분모에 정원×1 가산</span></td>`;tb.appendChild(xa);
+  const xa=document.createElement('tr');xa.id='xvAddRow';xa.innerHTML=`<td colspan="11" class="l"><button class="btn sm" type="button" id="xvAdd">＋ 항차 추가 (특별항차·야간운항·꽃페스타 등)</button> <span class="hint">항차명·시간 직접 입력 · 인원·매출은 가평크루즈 매출·합계에 포함, 탑승률 분모에 정원×1 가산</span></td>`;tb.appendChild(xa);
   xa.querySelector('#xvAdd').onclick=()=>{addExtraRow({});recalc();$$('#dBody [data-xk="name"]').pop()?.focus();};
   $$('#tab-daily [data-add]').forEach(b=>b.onclick=()=>{addItemRow(b.dataset.add,{});recalc();$$(`#tab-daily [data-it="${b.dataset.add}"][data-k="name"]`).pop()?.focus();});
   bindRecalc();
@@ -969,7 +982,8 @@ function buildGrid(){const tb=$('#dBody');tb.innerHTML='';
 function bindRecalc(){$$('#tab-daily input,#tab-daily select').forEach(el=>{if(el._rc)return;el._rc=1;el.addEventListener('input',recalc);el.addEventListener('change',recalc);
   if(el.type==='number'||el.type==='text')el.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const list=$$('#tab-daily input:not([type=date]):not([type=checkbox]),#tab-daily select');const i=list.indexOf(el);if(list[i+1])list[i+1].focus();}});});}
 function addExtraRow(e){const tb=$('#dBody');const tr=document.createElement('tr');tr.className='xv';tr.dataset.xv='1';
-  tr.innerHTML=`<td class="l" style="white-space:normal"><input type="text" data-xk="name" value="${esc(e.name||'')}" placeholder="항차명" style="width:100%;text-align:left;font-weight:600;font-size:12px;padding:4px 5px"><input type="text" data-xk="time" value="${esc(e.time||'')}" placeholder="시간 14:50" style="width:100%;text-align:left;margin-top:3px;font-size:11px;padding:3px 5px"></td>
+  tr.innerHTML=`<td class="l" style="white-space:normal"><input type="text" data-xk="name" value="${esc(e.name||'')}" placeholder="항차명" style="width:100%;text-align:left;font-weight:600;font-size:12px;padding:4px 5px"></td>
+   <td style="white-space:normal"><input type="text" data-xk="product" value="${esc(e.product||'')}" placeholder="상품명" style="display:block;width:100%;text-align:left;font-weight:600;font-size:12px;padding:4px 5px"><input type="text" data-xk="time" value="${esc(e.time||'')}" placeholder="시간 14:50" style="display:block;width:100%;text-align:left;margin-top:3px;font-size:11px;padding:3px 5px"></td>
    <td><select data-xk="status"><option>운항</option><option>미운항</option><option>결항</option></select></td>
    ${PAX.map(k=>`<td><input type="number" min="0" step="1" data-xk="${k}" value="${e[k]||''}"></td>`).join('')}
    <td class="calc num xpax">0</td><td class="calc num xrate">0.00%</td>
@@ -992,6 +1006,7 @@ function readForm(){const row=emptyRow(dDate.value);$$('#tab-daily [data-f]').fo
   const cur=cache[dDate.value];row.extra_pax=cur?Number(cur.extra_pax||0):0;row.extra_pax_note=cur?(cur.extra_pax_note||null):null; // 구버전 필드 보존
   row.items=readItems();row.extra_voyages=readExtras();return row;}
 function fillForm(row){row=row||emptyRow(dDate.value);$$('#tab-daily [data-f]').forEach(el=>{const v=row[el.dataset.f];el.value=(v==null?'':(el.type==='number'&&v===0?'':v));if(el.tagName==='SELECT')el.value=v||'운항';});
+  for(let v=1;v<=5;v++){const r=prod(row.sales_date||dDate.value,v);const pe=$(`[data-f="v${v}_product"]`),te=$(`[data-f="v${v}_time"]`);if(!pe.value)pe.value=r.name;if(!te.value)te.value=r.time;}
   const z=(v)=>(v==null||v===0)?'':v;$('#fEtc').value=z(row.etc_rev);$('#fHyo').value=z(row.hyojeong_rev);$('#fCvs').value=z(row.cvs_rev);$('#fGoods').value=z(row.goods_rev);
   $('#fPosPax').value=row.pos_pax==null?'':row.pos_pax;$('#fEtcNote').value=row.etc_note||'';$('#fMemo').value=row.memo||'';fillItems(row.items);fillExtras(row.extra_voyages);recalc();}
 function recalc(){const row=readForm();const a=aggregate([row]);
@@ -1026,13 +1041,13 @@ const vDate=$('#vDate');
 const VOY_TIME=['10:00','11:20','13:30','14:50','16:10'];
 function vlogVoyages(d){ // 그날의 항차 목록: 1~5항차(일일입력 상태) + 추가 항차
   const row=cache[d]||emptyRow(d);const vs=sched(d);const out=[];
-  for(let v=1;v<=5;v++){const st=row[`v${v}_status`]||'운항';const run=isRun(row,v);out.push({key:'v'+v,name:v+'항차',time:VOY_TIME[v-1],status:st!=='운항'?st:(run?'운항':'미운항'),run,scheduled:vs.includes(v)});}
-  (row.extra_voyages||[]).forEach(e=>{if(!e.name)return;out.push({key:'x:'+e.name,name:e.name,time:e.time||'',status:e.status||'운항',run:isRunEx(e),scheduled:true});});
+  for(let v=1;v<=5;v++){const st=row[`v${v}_status`]||'운항';const run=isRun(row,v);const p=voyProduct(row,v,prod);out.push({key:'v'+v,name:v+'항차',product:p.name,time:p.time,status:st!=='운항'?st:(run?'운항':'미운항'),run,scheduled:vs.includes(v)});}
+  (row.extra_voyages||[]).forEach(e=>{if(!e.name)return;out.push({key:'x:'+e.name,name:e.name,product:e.product||'',time:e.time||'',status:e.status||'운항',run:isRunEx(e),scheduled:true});});
   return out;}
 function vlogStaffNames(){const set=new Set();Object.values(voyagelogByDate).forEach(v=>(v&&v.entries||[]).forEach(e=>String(e.staff||'').split(/[,、/·]/).forEach(n=>{n=n.trim();if(n)set.add(n);})));return [...set];}
 function buildVlogGrid(d){const tb=$('#vBody');tb.innerHTML='';const saved=voyagelogByDate[d];const ents={};((saved&&saved.entries)||[]).forEach(e=>ents[e.key]=e);
   vlogVoyages(d).forEach(v=>{const e=ents[v.key]||{};const tr=document.createElement('tr');tr.dataset.key=v.key;tr.dataset.name=v.name;if(!v.run)tr.style.opacity='.6';
-    tr.innerHTML=`<td class="c"><b>${esc(v.name)}</b>${v.time?`<div class="hint">${esc(v.time)}</div>`:''}</td><td class="c ${v.run?'':'hint'}">${esc(v.status)}</td>
+    tr.innerHTML=`<td class="c"><b>${esc(v.name)}</b></td><td class="c">${esc(v.product||'')}${v.time?`<div class="hint">${esc(v.time)}</div>`:''}</td><td class="c ${v.run?'':'hint'}">${esc(v.status)}</td>
       <td><input type="number" min="0" max="99" step="1" data-vk="staff_count" value="${e.staff_count||''}"></td>
       <td><input type="text" data-vk="staff" list="vStaffList" value="${esc(e.staff||'')}" placeholder="예) 김철수, 박영희" style="text-align:left"></td>
       <td><textarea data-vk="reaction" rows="2" style="min-height:44px;font-size:13px;padding:5px 7px">${esc(e.reaction||'')}</textarea></td>
@@ -1040,7 +1055,7 @@ function buildVlogGrid(d){const tb=$('#vBody');tb.innerHTML='';const saved=voyag
     tb.appendChild(tr);});
   // 저장돼 있지만 지금 항차 목록에 없는 항차(추가 항차 이름이 바뀐 경우 등)도 보여줌
   ((saved&&saved.entries)||[]).forEach(e=>{if($(`#vBody tr[data-key="${CSS.escape(e.key)}"]`))return;const tr=document.createElement('tr');tr.dataset.key=e.key;tr.dataset.name=e.name;tr.style.background='#FFF8E6';
-    tr.innerHTML=`<td class="c"><b>${esc(e.name)}</b><div class="hint">일일입력에 없음</div></td><td class="c hint">—</td><td><input type="number" min="0" max="99" step="1" data-vk="staff_count" value="${e.staff_count||''}"></td><td><input type="text" data-vk="staff" list="vStaffList" value="${esc(e.staff||'')}" style="text-align:left"></td><td><textarea data-vk="reaction" rows="2" style="min-height:44px;font-size:13px;padding:5px 7px">${esc(e.reaction||'')}</textarea></td><td><input type="text" data-vk="note" value="${esc(e.note||'')}" style="text-align:left"></td>`;tb.appendChild(tr);});
+    tr.innerHTML=`<td class="c"><b>${esc(e.name)}</b><div class="hint">일일입력에 없음</div></td><td class="c hint">—</td><td class="c hint">—</td><td><input type="number" min="0" max="99" step="1" data-vk="staff_count" value="${e.staff_count||''}"></td><td><input type="text" data-vk="staff" list="vStaffList" value="${esc(e.staff||'')}" style="text-align:left"></td><td><textarea data-vk="reaction" rows="2" style="min-height:44px;font-size:13px;padding:5px 7px">${esc(e.reaction||'')}</textarea></td><td><input type="text" data-vk="note" value="${esc(e.note||'')}" style="text-align:left"></td>`;tb.appendChild(tr);});
   $('#vStaffList').innerHTML=vlogStaffNames().map(n=>`<option value="${esc(n)}">`).join('');
   $$('#vBody input,#vBody textarea').forEach(el=>{el.addEventListener('input',vlogRecalc);});vlogRecalc();}
 function vlogRecalc(){let t=0,n=0;$$('#vBody tr').forEach(tr=>{const c=Number(tr.querySelector('[data-vk=staff_count]').value||0);t+=c;if(c||tr.querySelector('[data-vk=staff]').value.trim()||tr.querySelector('[data-vk=reaction]').value.trim())n++;});$('#vTotStaff').textContent=fmt(t);$('#vTotNote').textContent=n?`${n}개 항차 기록`:'';}
@@ -1076,15 +1091,15 @@ async function renderReport(force){const d=rDate.value||today();rDate.value=d;co
   h+=`<div class="kpi"><div><small>매출 합계</small><b class="num">${fmt(a.total)}</b></div><div><small>운항 매출</small><b class="num">${fmt(a.ops)}</b></div><div><small>소매 매출 (매점·굿즈샵)</small><b class="num">${fmt(a.retail)}</b></div>
     <div><small>탑승 인원</small><b class="num">${fmt(a.paxSum)}<span style="font-size:12px;font-weight:600"> 명</span></b></div><div><small>탑승률</small><b class="num">${nRun?pct(rate):'-'}</b></div><div><small>운항 횟수 (실제/예정)</small><b class="num">${a.runsTotal} / ${nRun}</b></div></div>`;
   // 항차표
-  h+=`<h3>항차별 탑승 · 매출</h3><div class="tblwrap"><table class="tbl"><thead><tr><th class="c">항차</th><th class="c">시간</th><th class="c">운항</th><th>현장일반</th><th>현장우대</th><th>현장무료</th><th>온라인</th><th>합계(명)</th><th>탑승률</th><th>매출</th><th class="l">비고</th></tr></thead><tbody>`;
+  h+=`<h3>항차별 탑승 · 매출</h3><div class="tblwrap"><table class="tbl"><thead><tr><th class="c">항차</th><th class="c">상품</th><th class="c">시간</th><th class="c">운항</th><th>현장일반</th><th>현장우대</th><th>현장무료</th><th>온라인</th><th>합계(명)</th><th>탑승률</th><th>매출</th><th class="l">비고</th></tr></thead><tbody>`;
   for(let v=1;v<=5;v++){const st=row[`v${v}_status`]||'운항';const p=a.paxV[v-1];const r=a.rev[v-1];const run=isRun(row,v);const scheduled=vs.includes(v);
     if(!scheduled&&!p&&!r)continue; // 스케줄에 없고 숫자도 없는 항차는 표시 안 함
     const label=st!=='운항'?st:(run?'운항':'미운항');
-    h+=`<tr class="${run?'':'off'}"><td class="c"><b>${v}항차</b></td><td class="c">${VOY_TIME[v-1]}</td><td class="c">${label}</td>${num(row[`v${v}_adult`])}${num(row[`v${v}_disc`])}${num(row[`v${v}_free`])}${num(row[`v${v}_online`])}${num(p)}<td class="num">${run?pct(p/cap):'-'}</td>${num(r)}<td class="l">${esc(row[`v${v}_note`]||'')}</td></tr>`;}
+    const pr_=voyProduct(row,v,prod);h+=`<tr class="${run?'':'off'}"><td class="c"><b>${v}항차</b></td><td class="c">${esc(pr_.name)}</td><td class="c">${esc(pr_.time)}</td><td class="c">${label}</td>${num(row[`v${v}_adult`])}${num(row[`v${v}_disc`])}${num(row[`v${v}_free`])}${num(row[`v${v}_online`])}${num(p)}<td class="num">${run?pct(p/cap):'-'}</td>${num(r)}<td class="l">${esc(row[`v${v}_note`]||'')}</td></tr>`;}
   (row.extra_voyages||[]).forEach(e=>{const p=PAX.reduce((s,k)=>s+Number(e[k]||0),0);const run=isRunEx(e);
-    h+=`<tr class="${run?'':'off'}"><td class="c"><b>${esc(e.name||'추가항차')}</b></td><td class="c">${esc(e.time||'')}</td><td class="c">${esc(e.status||'운항')}</td>${num(e.adult)}${num(e.disc)}${num(e.free)}${num(e.online)}${num(p)}<td class="num">${run?pct(p/cap):'-'}</td>${num(e.rev)}<td class="l">${esc(e.note||'')}</td></tr>`;});
-  h+=`<tr class="tot"><td class="c" colspan="3">운항합계</td>${num(a.pax.adult.reduce((s,x)=>s+x,0)+exk('adult'))}${num(a.pax.disc.reduce((s,x)=>s+x,0)+exk('disc'))}${num(a.pax.free.reduce((s,x)=>s+x,0)+exk('free'))}${num(a.pax.online.reduce((s,x)=>s+x,0)+exk('online'))}${num(a.paxSum)}<td class="num">${nRun?pct(rate):'-'}</td>${num(a.cruise)}<td class="l hint">정원 ${cap} × ${nRun}항차</td></tr>`;
-  if(a.noshow||a.noshowPax)h+=`<tr class="noshow"><td class="c"><b>노쇼</b></td><td class="c">-</td><td class="c">-</td><td colspan="4" class="l hint">운항합계 인원에 미포함</td>${num(a.noshowPax)}<td class="num">-</td>${num(a.noshow)}<td class="l">노쇼 매출 (운항 매출 합계에 포함)</td></tr>`;
+    h+=`<tr class="${run?'':'off'}"><td class="c"><b>${esc(e.name||'추가항차')}</b></td><td class="c">${esc(e.product||'')}</td><td class="c">${esc(e.time||'')}</td><td class="c">${esc(e.status||'운항')}</td>${num(e.adult)}${num(e.disc)}${num(e.free)}${num(e.online)}${num(p)}<td class="num">${run?pct(p/cap):'-'}</td>${num(e.rev)}<td class="l">${esc(e.note||'')}</td></tr>`;});
+  h+=`<tr class="tot"><td class="c" colspan="4">운항합계</td>${num(a.pax.adult.reduce((s,x)=>s+x,0)+exk('adult'))}${num(a.pax.disc.reduce((s,x)=>s+x,0)+exk('disc'))}${num(a.pax.free.reduce((s,x)=>s+x,0)+exk('free'))}${num(a.pax.online.reduce((s,x)=>s+x,0)+exk('online'))}${num(a.paxSum)}<td class="num">${nRun?pct(rate):'-'}</td>${num(a.cruise)}<td class="l hint">정원 ${cap} × ${nRun}항차</td></tr>`;
+  if(a.noshow||a.noshowPax)h+=`<tr class="noshow"><td class="c"><b>노쇼</b></td><td class="c">-</td><td class="c">-</td><td class="c">-</td><td colspan="4" class="l hint">운항합계 인원에 미포함</td>${num(a.noshowPax)}<td class="num">-</td>${num(a.noshow)}<td class="l">노쇼 매출 (운항 매출 합계에 포함)</td></tr>`;
   h+=`</tbody></table></div>`;
   // 매출 구성 + 참고 항목
   const comp=[['항차 매출 (추가 항차 포함)',a.cruise]];if(a.noshow)comp.push(['노쇼 매출',a.noshow]);if(a.etc)comp.push([`기타 매출${row.etc_note?' · '+esc(row.etc_note):''}`,a.etc]);if(a.hyo)comp.push(['효정1호 매출',a.hyo]);
@@ -1105,9 +1120,9 @@ async function renderReport(force){const d=rDate.value||today();rDate.value=d;co
     const list=ents.slice().sort((x,y)=>(order[x.key]??99)-(order[y.key]??99));const tot=list.reduce((t,e)=>t+Number(e.staff_count||0),0);
     const paxOf=(k)=>{if(k.startsWith('v')){const v=+k.slice(1);return a.paxV[v-1];}const nm=k.slice(2);return a.ex[nm]?a.ex[nm].paxV:0;};
     h+=`<div class="pb"></div><div class="rh"><div><h1>항차일지 보고</h1><div class="sub">가평크루즈 · 항차별 탑승 직원 · 고객반응</div></div><div class="date"><b>${dateKo}</b><span>작성 ${esc(vl.updated_by||'')} · ${esc(fmtTs(vl.updated_at))}</span></div></div>`;
-    h+=`<table class="tbl vl"><thead><tr><th class="c" style="width:76px">항차</th><th class="c" style="width:52px">시간</th><th class="c" style="width:54px">운항</th><th class="c" style="width:62px">탑승객<br>(명)</th><th class="c" style="width:62px">탑승<br>직원 수</th><th class="l" style="width:120px">직원명</th><th class="l">고객반응</th><th class="l" style="width:110px">비고</th></tr></thead><tbody>`;
-    list.forEach(e=>{const v=byKey[e.key];h+=`<tr><td class="c"><b>${esc(e.name)}</b></td><td class="c">${v?esc(v.time):''}</td><td class="c">${v?esc(v.status):'-'}</td><td class="num">${v?fmt(paxOf(e.key)):'-'}</td><td class="num">${e.staff_count?fmt(e.staff_count):'-'}</td><td class="l">${esc(e.staff||'')}</td><td class="l" style="white-space:pre-wrap">${esc(e.reaction||'')}</td><td class="l" style="white-space:pre-wrap">${esc(e.note||'')}</td></tr>`;});
-    h+=`<tr class="tot"><td class="c" colspan="3">합계</td><td class="num">${fmt(a.paxSum)}</td><td class="num">${fmt(tot)}</td><td class="l hint" colspan="3">${list.length}개 항차 기록</td></tr></tbody></table>`;
+    h+=`<table class="tbl vl"><thead><tr><th class="c" style="width:60px">항차</th><th class="c" style="width:80px">상품</th><th class="c" style="width:48px">시간</th><th class="c" style="width:48px">운항</th><th class="c" style="width:62px">탑승객<br>(명)</th><th class="c" style="width:62px">탑승<br>직원 수</th><th class="l" style="width:120px">직원명</th><th class="l">고객반응</th><th class="l" style="width:110px">비고</th></tr></thead><tbody>`;
+    list.forEach(e=>{const v=byKey[e.key];h+=`<tr><td class="c"><b>${esc(e.name)}</b></td><td class="c">${v?esc(v.product||''):''}</td><td class="c">${v?esc(v.time):''}</td><td class="c">${v?esc(v.status):'-'}</td><td class="num">${v?fmt(paxOf(e.key)):'-'}</td><td class="num">${e.staff_count?fmt(e.staff_count):'-'}</td><td class="l">${esc(e.staff||'')}</td><td class="l" style="white-space:pre-wrap">${esc(e.reaction||'')}</td><td class="l" style="white-space:pre-wrap">${esc(e.note||'')}</td></tr>`;});
+    h+=`<tr class="tot"><td class="c" colspan="4">합계</td><td class="num">${fmt(a.paxSum)}</td><td class="num">${fmt(tot)}</td><td class="l hint" colspan="3">${list.length}개 항차 기록</td></tr></tbody></table>`;
     h+=`<div class="rf"><span>가평크루즈 크루즈 사업본부 · 일일매출 시스템</span><span>2 / 2</span></div>`;}
   el.innerHTML=h;$('#rState').textContent=`저장됨 (${fmtTs(row.updated_at)} ${row.updated_by||''})`;}
 rDate.onchange=()=>renderReport();$('#rPrev').onclick=()=>{rDate.value=addDays(rDate.value||today(),-1);renderReport();};$('#rNext').onclick=()=>{rDate.value=addDays(rDate.value||today(),1);renderReport();};
@@ -1278,7 +1293,7 @@ $('#lCsv').onclick=()=>{if(!logItems.length){toast('먼저 조회하세요.',tru
 
 /* ============ 설정 ============ */
 let tagDraft=[];
-function renderSettings(){$('#sUrl').value=cfg.url||'';$('#sDays').textContent=formDays;
+function renderSettings(){$('#sUrl').value=cfg.url||'';$('#sDays').textContent=formDays;prDraft=null;renderProducts();
   $('#sMe').textContent=session?`${session.user.name} (${session.user.email}) · 권한: ${session.user.role}`:'로그인 필요';
   $('#cardUsers').hidden=!isAdmin();if(isAdmin())loadUsers();
   if(!$('#scMonth').value)$('#scMonth').value=today().slice(0,7);scDraft=null;hlDraft=null;renderSched();renderHolidays();
@@ -1294,6 +1309,19 @@ $('#sTagSave').onclick=async()=>{if(!canEdit()){toast("태그 편집은 '수정'
 $('#sSave').onclick=async()=>{cfg={url:$('#sUrl').value.trim().replace(/\/$/,'')||DEFAULT_URL};LS.set('dsCfg_v2',cfg);$('#sMsg').textContent='확인 중…';try{const j=await api('진단',{});$('#sMsg').textContent=`연결 성공 · ${j.version}`;}catch(e){$('#sMsg').textContent='실패: '+e.message;}};
 $('#pwSave').onclick=async()=>{const c=$('#pwCur').value,n=$('#pwNew').value,n2=$('#pwNew2').value;if(n.length<6){toast('새 비밀번호는 6자 이상',true);return;}if(n!==n2){toast('새 비밀번호 확인이 다릅니다.',true);return;}
   try{await api('비밀번호변경',{current:c,next:n});$('#pwCur').value=$('#pwNew').value=$('#pwNew2').value='';toast('비밀번호가 변경되었습니다.');}catch(e){toast(e.message,true);}};
+/* 항차별 상품·시간 규칙 편집 (v2.7) */
+let prDraft=null;const PR_COLS=[['base','기본'],['0','일'],['1','월'],['2','화'],['3','수'],['4','목'],['5','금'],['6','토'],['hol','공휴일']];
+function prGet(){return prDraft||(prDraft=JSON.parse(JSON.stringify(appCfg.products||DEFAULT_PRODUCTS)));}
+function prCell(pr,col,v){if(col==='base')return (pr.base||{})[v]||{};if(col==='hol')return (pr.hol||{})[v]||{};return ((pr.wd||{})[col]||{})[v]||{};}
+function prSet(pr,col,v,k,val){let m;if(col==='base')m=pr.base=pr.base||{};else if(col==='hol')m=pr.hol=pr.hol||{};else{pr.wd=pr.wd||{};m=pr.wd[col]=pr.wd[col]||{};}
+  const c=m[v]=m[v]||{};c[k]=val;if(!c.name&&!c.time)delete m[v];}
+function renderProducts(){const pr=prGet();const t=$('#prTable');if(!t)return;
+  t.innerHTML='<thead><tr><th class="c">항차</th>'+PR_COLS.map(([k,l])=>`<th class="c" style="min-width:104px">${l}</th>`).join('')+'</tr></thead><tbody>'+
+    [1,2,3,4,5].map(v=>`<tr><td class="c"><b>${v}항차</b></td>`+PR_COLS.map(([k])=>{const c=prCell(pr,k,v);return `<td style="white-space:normal"><input type="text" data-pr="${k}|${v}|name" value="${esc(c.name||'')}" placeholder="${k==='base'?'상품명':'(기본)'}" style="display:block;width:100%;text-align:left;font-size:12px;padding:3px 5px"><input type="text" data-pr="${k}|${v}|time" value="${esc(c.time||'')}" placeholder="${k==='base'?'시간':''}" style="display:block;width:100%;text-align:left;font-size:11px;padding:2px 5px;margin-top:2px"></td>`;}).join('')+'</tr>').join('')+'</tbody>';
+  $$('#prTable [data-pr]').forEach(el=>{el.disabled=!isAdmin();el.onchange=()=>{const [k,v,f]=el.dataset.pr.split('|');prSet(prGet(),k,+v,f,el.value.trim());};});
+  $$('#prSave,#prReset').forEach(b=>b.disabled=!isAdmin());}
+$('#prSave').onclick=async()=>{try{await api('설정저장',{key:'products',value:prGet()});appCfg.products=JSON.parse(JSON.stringify(prGet()));prod=makeProd(appCfg.products,appCfg.holidays);toast('상품 규칙 저장됨');}catch(e){toast(e.message,true);}};
+$('#prReset').onclick=()=>{prDraft=JSON.parse(JSON.stringify(DEFAULT_PRODUCTS));renderProducts();};
 /* 운항 스케줄 · 공휴일 편집 */
 let scDraft=null,hlDraft=null;
 const WDN=['일','월','화','수','목','금','토'];
@@ -1314,7 +1342,7 @@ $('#scCopyPrev').onclick=()=>{const sc=scGet();const ym=$('#scMonth').value;cons
 $('#scClear').onclick=()=>{delete scGet().months[$('#scMonth').value];renderSched();};
 $('#scSave').onclick=async()=>{try{await api('설정저장',{key:'schedule',value:scGet()});appCfg.schedule=JSON.parse(JSON.stringify(scGet()));sched=makeSched(appCfg.schedule,appCfg.holidays);DSX.setSched(sched);toast('스케줄 저장됨');recalc();}catch(e){toast(e.message,true);}};
 $('#hlAdd').onclick=()=>{const d=$('#hlNew').value;if(!d)return;if(!hlDraft.includes(d))hlDraft.push(d);hlDraft.sort();renderHolidays();};
-$('#hlSave').onclick=async()=>{try{await api('설정저장',{key:'holidays',value:hlDraft});appCfg.holidays=hlDraft.slice();sched=makeSched(appCfg.schedule,appCfg.holidays);DSX.setSched(sched);toast('공휴일 저장됨');recalc();}catch(e){toast(e.message,true);}};
+$('#hlSave').onclick=async()=>{try{await api('설정저장',{key:'holidays',value:hlDraft});appCfg.holidays=hlDraft.slice();sched=makeSched(appCfg.schedule,appCfg.holidays);prod=makeProd(appCfg.products,appCfg.holidays);DSX.setSched(sched);toast('공휴일 저장됨');recalc();}catch(e){toast(e.message,true);}};
 /* 사용자 관리 */
 let users=[];
 async function loadUsers(){try{const j=await api('사용자목록',{});users=j.users;renderUsers();}catch(e){toast(e.message,true);}}
