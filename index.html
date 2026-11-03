@@ -430,10 +430,10 @@ table{border-collapse:collapse;width:100%}
     <div class="tblwrap" style="margin-top:8px"><table class="tbl" id="scTable" style="max-width:720px"></table></div>
     <div class="row" style="margin-top:8px">
       <button class="btn sm" id="scCopyPrev">이전 달 스케줄 복사</button>
-      <button class="btn sm" id="scClear">이 달 설정 삭제(매일 5항차)</button>
+      <button class="btn sm" id="scClear">이 달 설정 삭제(기본 패턴으로)</button>
       <button class="btn primary sm" id="scSave">스케줄 저장</button>
     </div>
-    <p class="hint">설정이 없는 달은 매일 1~5항차 운항으로 계산합니다. 요일을 전부 해제하면 그 요일은 휴무(공휴일이어도 휴무). 결항·미운항은 분모에서 빼지 않습니다.</p>
+    <p class="hint">설정이 없는 달은 기본 패턴(일·금·토 5항차, 월·화·목 1~3항차, 수요일 휴무, 공휴일 5항차)으로 계산합니다. 요일을 전부 해제하면 그 요일은 휴무(공휴일이어도 휴무). 결항·미운항은 분모에서 빼지 않습니다.</p>
     <h3>항차별 상품 · 시간 규칙 <span class="hint">(일일 입력 "상품" 열 자동 입력 · 비우면 기본값 사용 · 편집은 관리자)</span></h3>
     <div class="tblwrap"><table class="tbl" id="prTable" style="max-width:1100px"></table></div>
     <div class="row" style="margin-top:8px"><button class="btn primary sm" id="prSave">상품 규칙 저장</button><button class="btn sm" id="prReset">기본값으로</button><span class="hint">기본: 1~5항차 청평호투어 (10:00/11:20/13:30/14:50/16:10), 월·화·목 3항차 = 섬섬투어 13:30. 날짜별로 다르면 일일 입력에서 직접 고치면 됩니다(고친 값은 그 날짜에만 저장).</span></div>
@@ -464,7 +464,7 @@ table{border-collapse:collapse;width:100%}
     <ul>
       <li>금액은 원 단위, VAT 포함. 인원은 항차별 현장일반·현장우대·현장무료·온라인 합계 + 항차 외 인원(대관 등).</li>
       <li>주차 = 월요일~일요일. 주차 이름은 월요일이 속한 달 기준 "MM월 N주차" (N = 그 달의 N번째 월요일). 예) 2026-01-05~11 = 01월 1주차.</li>
-      <li>탑승률 = 인원 ÷ (정원 250 × 운항 스케줄상 항차 수). 항차별 열은 그 항차가 운항하는 날 수, 합계는 기간 내 전체 운항 항차 수. 설정 탭의 월별 운항 스케줄(요일별·공휴일)로 계산하며, 설정 없는 달은 매일 5항차. 결항·미운항도 분모에 포함.</li>
+      <li>탑승률 = 인원 ÷ (정원 250 × 운항 스케줄상 항차 수). 항차별 열은 그 항차가 운항하는 날 수, 합계는 기간 내 전체 운항 항차 수. 설정 탭의 월별 운항 스케줄(요일별·공휴일)로 계산하며, 설정 없는 달은 기본 패턴(일·금·토 5항차, 월·화·목 1~3항차, 수 휴무). 결항·미운항도 분모에 포함.</li>
       <li>운항 매출 합계 = 항차 매출 + 노쇼 + 기타 + 효정1호. 소매 = 선내 편의점 + 굿즈샵.</li>
       <li>추가 항차(특별항차·야간운항·꽃페스타 등)는 일일 입력에서 "＋ 항차 추가"로 입력. 인원·매출은 가평크루즈 매출·합계(명)에 포함되고, 주간·월간 표에는 항차명별 열이 추가되며, 운항한 추가 항차는 예정·실제 운항 횟수와 탑승률 분모(정원×1)에 각각 더함.</li>
       <li>운항 횟수 = 입력된 날 중 운항 상태가 '운항'인 항차 수(미입력일은 제외). 스케줄에 없는 항차는 인원·매출이 입력된 경우에만 실제 운항으로 셈. 운항율 = 실제 운항 횟수 ÷ 스케줄상 예정 운항 횟수.</li>
@@ -587,9 +587,10 @@ function applyKakao(row,pk){ // 기존 행(row)에 파싱 결과를 덮어씀 (�
   if(pk.memo&&pk.memo.length){const add=pk.memo.join(' / ');row.memo=row.memo&&!row.memo.includes(add)?row.memo+' / '+add:(row.memo&&row.memo.includes(add)?row.memo:add);}
   return row;}
 /* ---------- 운항 스케줄 (탑승률 분모) ---------- */
-// schedule = {cap:250, months:{'YYYY-MM':{wd:[일,월,화,수,목,금,토 → 운항 항차 배열], hol:[공휴일 운항 항차]}}} — 설정 없는 달은 매일 5항차(기존 방식)
+// schedule = {cap:250, months:{'YYYY-MM':{wd:[일,월,화,수,목,금,토 → 운항 항차 배열], hol:[공휴일 운항 항차]}}} — 설정 없는 달은 DEFAULT_WEEK 패턴(v2.7b, 이전엔 매일 5항차)
 // 규칙: 요일 배열이 비어 있으면(휴무) 공휴일이어도 휴무. 결항·미운항은 분모에서 빼지 않음.
 const ALL5=[1,2,3,4,5];
+const DEFAULT_WEEK={wd:[ALL5,[1,2,3],[1,2,3],[],[1,2,3],ALL5,ALL5],hol:ALL5}; // 설정 없는 달의 기본 패턴: 일·금·토 5항차, 월·화·목 1~3항차, 수 휴무, 공휴일 5항차
 const DEFAULT_SCHEDULE={cap:250,months:{'2026-10':{wd:[ALL5,[1,2,3],[1,2,3],[],[1,2,3],ALL5,ALL5],hol:ALL5}}};
 // 항차별 상품·시간 규칙 (v2.7): base = 기본, wd[요일] = 요일별 덮어쓰기, hol = 공휴일 덮어쓰기 (요일 규칙보다 우선)
 const DEFAULT_PRODUCTS={base:{1:{name:'청평호투어',time:'10:00'},2:{name:'청평호투어',time:'11:20'},3:{name:'청평호투어',time:'13:30'},4:{name:'청평호투어',time:'14:50'},5:{name:'청평호투어',time:'16:10'}},
@@ -602,7 +603,7 @@ function makeProd(products,holidays){const pr=products||DEFAULT_PRODUCTS;const h
 function voyProduct(row,v,prod){const r=(prod||makeProd())(row.sales_date,v);return {name:row[`v${v}_product`]||r.name,time:row[`v${v}_time`]||r.time};}
 const DEFAULT_HOLIDAYS=['2026-01-01','2026-02-16','2026-02-17','2026-02-18','2026-03-01','2026-03-02','2026-05-05','2026-05-24','2026-05-25','2026-06-03','2026-06-06','2026-08-15','2026-08-17','2026-09-24','2026-09-25','2026-09-26','2026-10-03','2026-10-05','2026-10-09','2026-12-25'];
 function makeSched(schedule,holidays){const sc=schedule||DEFAULT_SCHEDULE;const hs=new Set(holidays||DEFAULT_HOLIDAYS);const cap=Number(sc.cap)||250;
-  const f=(date)=>{const mc=(sc.months||{})[date.slice(0,7)];if(!mc)return ALL5;const wd=(mc.wd||[])[d2(date).getDay()]||[];if(!wd.length)return [];return hs.has(date)?(mc.hol||[]):wd;};
+  const f=(date)=>{const mc=(sc.months||{})[date.slice(0,7)]||DEFAULT_WEEK;const wd=(mc.wd||[])[d2(date).getDay()]||[];if(!wd.length)return [];return hs.has(date)?(mc.hol||[]):wd;};
   f.cap=cap;f.isHoliday=(d)=>hs.has(d);f.hasMonth=(ym)=>!!(sc.months||{})[ym];return f;}
 function denomFor(days,sched,a){sched=sched||makeSched();const perV=[0,0,0,0,0];let total=0;days.forEach(d=>{const vs=sched(d);vs.forEach(v=>perV[v-1]++);total+=vs.length;});
   if(a&&a.exNames)a.exNames.forEach(n=>{perV.push(a.ex[n].runs);total+=a.ex[n].runs;});return {perV,total,cap:sched.cap,days:days.length};}
@@ -884,7 +885,7 @@ function makeMonthWorkbook(ExcelJS,ym,rowsByDate,worklog,sched){
   if(worklog&&worklog.length)buildWorklogSheet(wb,worklog,'업무일지');
   return wb;
 }
-global.DSX={d2,iso,addDays,sheetName,kdate,mondayOf,weekLabel,weekFile,emptyRow,daysInMonth,aggregate,weeksOfMonth,makeWeekWorkbook,makeMonthWorkbook,itemsByKind,KINDS,QTY_LABEL,PAX,PAX_LABEL,WD,makeSched,denomFor,DEFAULT_SCHEDULE,DEFAULT_HOLIDAYS,ALL5,setSched:(f)=>{CUR_SCHED=f;},parseKakao,applyKakao,extrasOf,isRunEx,isRun,DEFAULT_PRODUCTS,makeProd,voyProduct};
+global.DSX={d2,iso,addDays,sheetName,kdate,mondayOf,weekLabel,weekFile,emptyRow,daysInMonth,aggregate,weeksOfMonth,makeWeekWorkbook,makeMonthWorkbook,itemsByKind,KINDS,QTY_LABEL,PAX,PAX_LABEL,WD,makeSched,denomFor,DEFAULT_SCHEDULE,DEFAULT_HOLIDAYS,ALL5,DEFAULT_WEEK,setSched:(f)=>{CUR_SCHED=f;},parseKakao,applyKakao,extrasOf,isRunEx,isRun,DEFAULT_PRODUCTS,makeProd,voyProduct};
 })(typeof window!=='undefined'?window:globalThis);
 </script>
 
@@ -892,7 +893,7 @@ global.DSX={d2,iso,addDays,sheetName,kdate,mondayOf,weekLabel,weekFile,emptyRow,
 /* ===================== 앱 본체 ===================== */
 (function(){
 const $=(s)=>document.querySelector(s), $$=(s)=>[...document.querySelectorAll(s)];
-const {d2,iso,addDays,mondayOf,weekLabel,weekFile,emptyRow,daysInMonth,aggregate,weeksOfMonth,KINDS,QTY_LABEL,PAX,PAX_LABEL,WD,makeSched,denomFor,DEFAULT_SCHEDULE,DEFAULT_HOLIDAYS,ALL5,parseKakao,applyKakao,isRun,isRunEx,DEFAULT_PRODUCTS,makeProd,voyProduct}=DSX;
+const {d2,iso,addDays,mondayOf,weekLabel,weekFile,emptyRow,daysInMonth,aggregate,weeksOfMonth,KINDS,QTY_LABEL,PAX,PAX_LABEL,WD,makeSched,denomFor,DEFAULT_SCHEDULE,DEFAULT_HOLIDAYS,ALL5,DEFAULT_WEEK,parseKakao,applyKakao,isRun,isRunEx,DEFAULT_PRODUCTS,makeProd,voyProduct}=DSX;
 let appCfg={schedule:null,holidays:null,products:null};let sched=makeSched();let prod=makeProd();
 async function loadConfig(){try{const j=await api('설정조회',{});appCfg={schedule:j.config.schedule||null,holidays:j.config.holidays||null,products:j.config.products||null};}catch(e){}sched=makeSched(appCfg.schedule,appCfg.holidays);prod=makeProd(appCfg.products,appCfg.holidays);DSX.setSched(sched);}
 const fmt=(n)=>Number(n||0).toLocaleString('ko-KR');
@@ -1329,11 +1330,11 @@ let scDraft=null,hlDraft=null;
 const WDN=['일','월','화','수','목','금','토'];
 function scGet(){return scDraft||(scDraft=JSON.parse(JSON.stringify(appCfg.schedule||DEFAULT_SCHEDULE)));}
 function renderSched(){const sc=scGet();const ym=$('#scMonth').value||today().slice(0,7);$('#scCap').value=sc.cap||250;const mc=sc.months[ym];
-  $('#scState').textContent=mc?`${ym} 설정 있음`:`${ym} 설정 없음 → 매일 1~5항차로 계산 중 (아래에서 체크 후 저장하면 설정됨)`;
-  const cur=mc||{wd:[ALL5,ALL5,ALL5,ALL5,ALL5,ALL5,ALL5],hol:ALL5};
+  $('#scState').textContent=mc?`${ym} 설정 있음`:`${ym} 설정 없음 → 기본 패턴(일·금·토 5항차, 월·화·목 1~3항차, 수 휴무)으로 계산 중 (체크 후 저장하면 이 달 설정이 됨)`;
+  const cur=mc||DEFAULT_WEEK;
   const rows=[...WDN.map((n,i)=>({label:n+'요일',key:i,arr:cur.wd[i]})),{label:'공휴일',key:'hol',arr:cur.hol}];
   $('#scTable').innerHTML=`<thead><tr><th class="l">구분</th>${[1,2,3,4,5].map(v=>`<th>${v}항차</th>`).join('')}<th>운항</th></tr></thead><tbody>`+rows.map(r=>`<tr><td class="l"><b>${r.label}</b></td>${[1,2,3,4,5].map(v=>`<td class="c"><input type="checkbox" data-sc="${r.key}" data-v="${v}" ${r.arr.includes(v)?'checked':''} ${isAdmin()?'':'disabled'}></td>`).join('')}<td class="c">${r.arr.length?r.arr.length+'항차':'휴무'}</td></tr>`).join('')+'</tbody>';
-  $$('#scTable input').forEach(cb=>cb.onchange=()=>{const sc=scGet();const m=sc.months[ym]||(sc.months[ym]={wd:[ALL5,ALL5,ALL5,ALL5,ALL5,ALL5,ALL5].map(a=>a.slice()),hol:ALL5.slice()});
+  $$('#scTable input').forEach(cb=>cb.onchange=()=>{const sc=scGet();const m=sc.months[ym]||(sc.months[ym]={wd:DEFAULT_WEEK.wd.map(a=>a.slice()),hol:DEFAULT_WEEK.hol.slice()});
     const k=cb.dataset.sc,v=+cb.dataset.v;const arr=k==='hol'?m.hol:m.wd[+k];const i=arr.indexOf(v);if(cb.checked&&i<0)arr.push(v);if(!cb.checked&&i>=0)arr.splice(i,1);arr.sort();renderSched();});
   $$('#scSave,#scCopyPrev,#scClear,#hlSave,#hlAdd').forEach(b=>b.disabled=!isAdmin());}
 function renderHolidays(){const hl=hlDraft||(hlDraft=(appCfg.holidays||DEFAULT_HOLIDAYS).slice().sort());
