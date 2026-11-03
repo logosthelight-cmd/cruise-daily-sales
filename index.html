@@ -63,6 +63,7 @@ table{border-collapse:collapse;width:100%}
 .tbl th{background:var(--surface);color:var(--navy);font-weight:600;text-align:center}
 .tbl td.l{text-align:left}
 .tbl th{text-align:center!important;vertical-align:middle}
+.tbl td{vertical-align:middle}
 .tbl td.c,.tbl th.c{text-align:center}
 .tbl tr.sub td{background:var(--sky100);font-weight:700;color:var(--navy)}
 .tbl tr.tot td{background:var(--surface);font-weight:700}
@@ -128,7 +129,7 @@ table{border-collapse:collapse;width:100%}
 .rpt .rf{display:flex;justify-content:space-between;margin-top:16px;padding-top:6px;border-top:1px solid var(--hair);font-size:11px;color:var(--steel)}
 .rpt .empty{padding:30px;text-align:center;color:var(--steel)}
 .rpt .pb{border-top:2px dashed var(--hair);margin:26px 0 18px}
-.rpt .tbl.vl td{white-space:normal;vertical-align:top}
+.rpt .tbl.vl td{white-space:normal;vertical-align:middle}
 @media (max-width:720px){.rpt .kpi{grid-template-columns:repeat(3,1fr)}.rpt .two{grid-template-columns:1fr}}
 @media print{
   @page{size:A4 portrait;margin:11mm 11mm 12mm}
@@ -1121,9 +1122,9 @@ async function renderReport(force){const d=rDate.value||today();rDate.value=d;co
     const list=ents.slice().sort((x,y)=>(order[x.key]??99)-(order[y.key]??99));const tot=list.reduce((t,e)=>t+Number(e.staff_count||0),0);
     const paxOf=(k)=>{if(k.startsWith('v')){const v=+k.slice(1);return a.paxV[v-1];}const nm=k.slice(2);return a.ex[nm]?a.ex[nm].paxV:0;};
     h+=`<div class="pb"></div><div class="rh"><div><h1>항차일지 보고</h1><div class="sub">가평크루즈 · 항차별 탑승 직원 · 고객반응</div></div><div class="date"><b>${dateKo}</b><span>작성 ${esc(vl.updated_by||'')} · ${esc(fmtTs(vl.updated_at))}</span></div></div>`;
-    h+=`<table class="tbl vl"><thead><tr><th class="c" style="width:60px">항차</th><th class="c" style="width:90px">상품</th><th class="c" style="width:48px">운항</th><th class="c" style="width:62px">탑승객<br>(명)</th><th class="c" style="width:62px">탑승<br>직원 수</th><th class="l" style="width:120px">직원명</th><th class="l">고객반응</th><th class="l" style="width:110px">비고</th></tr></thead><tbody>`;
-    list.forEach(e=>{const v=byKey[e.key];h+=`<tr><td class="c"><b>${esc(e.name)}</b></td><td class="c">${v?esc(v.product||''):''}${v&&v.time?`<div class="hint">(${esc(v.time)})</div>`:''}</td><td class="c">${v?esc(v.status):'-'}</td><td class="num">${v?fmt(paxOf(e.key)):'-'}</td><td class="num">${e.staff_count?fmt(e.staff_count):'-'}</td><td class="l">${esc(e.staff||'')}</td><td class="l" style="white-space:pre-wrap">${esc(e.reaction||'')}</td><td class="l" style="white-space:pre-wrap">${esc(e.note||'')}</td></tr>`;});
-    h+=`<tr class="tot"><td class="c" colspan="3">합계</td><td class="num">${fmt(a.paxSum)}</td><td class="num">${fmt(tot)}</td><td class="l hint" colspan="3">${list.length}개 항차 기록</td></tr></tbody></table>`;
+    h+=`<table class="tbl vl"><thead><tr><th class="c" style="width:60px">항차</th><th class="c" style="width:90px">상품</th><th class="c" style="width:48px">운항</th><th class="c" style="width:62px">탑승<br>직원 수</th><th class="l" style="width:120px">직원명</th><th class="l">고객반응</th><th class="l" style="width:110px">비고</th></tr></thead><tbody>`;
+    list.forEach(e=>{const v=byKey[e.key];h+=`<tr><td class="c"><b>${esc(e.name)}</b></td><td class="c">${v?esc(v.product||''):''}${v&&v.time?`<div class="hint">(${esc(v.time)})</div>`:''}</td><td class="c">${v?esc(v.status):'-'}</td><td class="num">${e.staff_count?fmt(e.staff_count):'-'}</td><td class="l">${esc(e.staff||'')}</td><td class="l" style="white-space:pre-wrap">${esc(e.reaction||'')}</td><td class="l" style="white-space:pre-wrap">${esc(e.note||'')}</td></tr>`;});
+    h+=`<tr class="tot"><td class="c" colspan="3">합계</td><td class="num">${fmt(tot)}</td><td class="l hint" colspan="3">${list.length}개 항차 기록</td></tr></tbody></table>`;
     h+=`<div class="rf"><span>가평크루즈 크루즈 사업본부 · 일일매출 시스템</span><span>2 / 2</span></div>`;}
   el.innerHTML=h;$('#rState').textContent=`저장됨 (${fmtTs(row.updated_at)} ${row.updated_by||''})`;}
 rDate.onchange=()=>renderReport();$('#rPrev').onclick=()=>{rDate.value=addDays(rDate.value||today(),-1);renderReport();};$('#rNext').onclick=()=>{rDate.value=addDays(rDate.value||today(),1);renderReport();};
