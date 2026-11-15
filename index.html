@@ -99,6 +99,8 @@ table{border-collapse:collapse;width:100%}
 .overlay label.f{margin-bottom:8px}
 .overlay input{width:100%}
 .err-msg{color:var(--red);font-size:12px;min-height:16px;margin:4px 0}
+.livebar{position:sticky;top:52px;z-index:19;display:flex;gap:10px;align-items:center;justify-content:center;background:#FFF4D6;border-bottom:1px solid #F0D28A;color:#7A5200;padding:7px 12px;font-weight:600;font-size:13px}
+.cf-diff td.chg{background:#FBE9E9;color:#C0392B;font-weight:700}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--navy-deep);color:#fff;padding:10px 18px;border-radius:9999px;font-weight:600;box-shadow:0 6px 20px rgba(22,46,84,.3);z-index:50;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw}
 .toast.show{opacity:1}
 .toast.err{background:var(--red)}
@@ -173,6 +175,7 @@ table{border-collapse:collapse;width:100%}
   </div>
 </div></header>
 
+<div id="liveBar" class="livebar" hidden><span id="liveMsg"></span><button class="btn sm primary" id="liveApply">최신 내용 보기</button><button class="btn sm" id="liveDismiss">닫기</button></div>
 <main>
 <!-- ================= 일일 입력 ================= -->
 <section class="tab on" id="tab-daily">
@@ -502,6 +505,13 @@ table{border-collapse:collapse;width:100%}
     </div>
   </div>
 </div>
+<div class="overlay" id="conflictBox" hidden><div class="box" style="max-width:720px">
+  <h2>다른 사용자가 먼저 저장했습니다</h2>
+  <div class="sub" id="cfSub"></div>
+  <div class="tblwrap" style="max-height:50vh;overflow:auto"><table class="tbl" id="cfTable"></table></div>
+  <div class="hint" style="margin:8px 0">"최신 내용 불러오기"를 누르면 상대방이 저장한 내용으로 화면이 바뀝니다(내가 고친 값은 사라지므로 필요한 부분만 다시 입력). "내 값으로 덮어쓰기"는 상대방 저장 내용을 지우고 내 화면 값을 저장합니다.</div>
+  <div class="row" style="justify-content:flex-end"><button class="btn" id="cfCancel">취소</button><button class="btn primary" id="cfLoad">최신 내용 불러오기</button><button class="btn danger" id="cfForce">내 값으로 덮어쓰기</button></div>
+</div></div>
 <div class="toast" id="toast"></div>
 
 <script id="excel-builder">
@@ -912,6 +922,7 @@ let tags=[];            // {name,sort,color}
 const cache={};         // date -> row
 let worklogByDate={};   // date -> [items]
 let voyagelogByDate={}; // date -> {sales_date,entries,updated_by,updated_at}
+const loadedDays=new Set(); // 서버에서 한 번이라도 불러온 날짜 (폴링 비교 대상)
 let formDays=1;
 const role=()=>session?session.user.role:'';const canEdit=()=>role()==='수정'||role()==='관리';const isAdmin=()=>role()==='관리';const myName=()=>session?session.user.name:'';
 
@@ -932,7 +943,7 @@ async function api(op,payload,opts){opts=opts||{};
   catch(e){clearTimeout(tm);throw new Error('서버 연결 실패 ('+(e.name==='AbortError'?'시간 초과':'네트워크')+')');}
   clearTimeout(tm);
   let j;try{j=await r.json();}catch{throw new Error('서버 응답 오류 '+r.status);}
-  if(!j.ok){if(j.login&&!opts.noLoginRedirect){clearSession();showLogin('login');$('#lgErr').textContent=j.error||'';}const e=new Error(j.error||('오류 '+r.status));e.status=r.status;throw e;}
+  if(!j.ok){if(j.login&&!opts.noLoginRedirect){clearSession();showLogin('login');$('#lgErr').textContent=j.error||'';}const e=new Error(j.error||('오류 '+r.status));e.status=r.status;e.data=j;throw e;}
   if(j.user&&session&&j.user.id===session.user.id){session.user=j.user;LS.set('dsSession_v1',session);setRolePill();}if(j.formEditDays)formDays=j.formEditDays;return j;
 }
 
@@ -954,7 +965,7 @@ async function loadRange(from,to){const j=await api('일일조회',{from,to});
   j.rows.forEach(r=>cache[r.sales_date]=r);
   j.worklog.forEach(w=>{(worklogByDate[w.sales_date]=worklogByDate[w.sales_date]||[]).push(w);});
   (j.voyagelog||[]).forEach(v=>voyagelogByDate[v.sales_date]=v);
-  for(let d=from;d<=to;d=addDays(d,1))if(!voyagelogByDate[d])voyagelogByDate[d]=null;
+  for(let d=from;d<=to;d=addDays(d,1)){if(!voyagelogByDate[d])voyagelogByDate[d]=null;loadedDays.add(d);}
   return j;}
 async function loadTags(){try{const j=await api('태그목록',{});tags=j.tags;}catch(e){if(!tags.length)tags=['크루즈 운항','굿즈샵','선내매점','대관','단체','매표','경비','매출분석','공문','기타'].map((n,i)=>({name:n,sort:i,color:'#162E54'}));}
   renderTagPickers();}
@@ -982,7 +993,7 @@ function buildGrid(){const tb=$('#dBody');tb.innerHTML='';
   $$('#tab-daily [data-add]').forEach(b=>b.onclick=()=>{addItemRow(b.dataset.add,{});recalc();$$(`#tab-daily [data-it="${b.dataset.add}"][data-k="name"]`).pop()?.focus();});
   bindRecalc();
 }
-function bindRecalc(){$$('#tab-daily input,#tab-daily select').forEach(el=>{if(el._rc)return;el._rc=1;el.addEventListener('input',recalc);el.addEventListener('change',recalc);
+function bindRecalc(){$$('#tab-daily input,#tab-daily select').forEach(el=>{if(el._rc)return;el._rc=1;el.addEventListener('input',()=>{dailyDirty=true;recalc();});el.addEventListener('change',()=>{dailyDirty=true;recalc();});
   if(el.type==='number'||el.type==='text')el.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const list=$$('#tab-daily input:not([type=date]):not([type=checkbox]),#tab-daily select');const i=list.indexOf(el);if(list[i+1])list[i+1].focus();}});});}
 function addExtraRow(e){const tb=$('#dBody');const tr=document.createElement('tr');tr.className='xv';tr.dataset.xv='1';
   tr.innerHTML=`<td class="l" style="white-space:normal"><input type="text" data-xk="name" value="${esc(e.name||'')}" placeholder="항차명" style="width:100%;text-align:left;font-weight:600;font-size:12px;padding:4px 5px"></td>
@@ -1008,7 +1019,7 @@ function readForm(){const row=emptyRow(dDate.value);$$('#tab-daily [data-f]').fo
   row.pos_pax=$('#fPosPax').value===''?null:Number($('#fPosPax').value);row.etc_note=$('#fEtcNote').value.trim()||null;row.memo=$('#fMemo').value.trim()||null;
   const cur=cache[dDate.value];row.extra_pax=cur?Number(cur.extra_pax||0):0;row.extra_pax_note=cur?(cur.extra_pax_note||null):null; // 구버전 필드 보존
   row.items=readItems();row.extra_voyages=readExtras();return row;}
-function fillForm(row){row=row||emptyRow(dDate.value);$$('#tab-daily [data-f]').forEach(el=>{const v=row[el.dataset.f];el.value=(v==null?'':(el.type==='number'&&v===0?'':v));if(el.tagName==='SELECT')el.value=v||'운항';});
+function fillForm(row){dailyDirty=false;row=row||emptyRow(dDate.value);$$('#tab-daily [data-f]').forEach(el=>{const v=row[el.dataset.f];el.value=(v==null?'':(el.type==='number'&&v===0?'':v));if(el.tagName==='SELECT')el.value=v||'운항';});
   for(let v=1;v<=5;v++){const r=prod(row.sales_date||dDate.value,v);const pe=$(`[data-f="v${v}_product"]`),te=$(`[data-f="v${v}_time"]`);if(!pe.value)pe.value=r.name;if(!te.value)te.value=r.time;}
   const z=(v)=>(v==null||v===0)?'':v;$('#fEtc').value=z(row.etc_rev);$('#fHyo').value=z(row.hyojeong_rev);$('#fCvs').value=z(row.cvs_rev);$('#fGoods').value=z(row.goods_rev);
   $('#fPosPax').value=row.pos_pax==null?'':row.pos_pax;$('#fEtcNote').value=row.etc_note||'';$('#fMemo').value=row.memo||'';fillItems(row.items);fillExtras(row.extra_voyages);recalc();}
@@ -1032,12 +1043,14 @@ async function loadDay(){const d=dDate.value;if(!d)return;$('#dLock').hidden=tru
   if(!canEdit()&&(ago<0||ago>=formDays)){$('#dLock').hidden=false;$('#dLock').textContent=ago<0?'미래 날짜는 입력할 수 없습니다.':`'입력' 권한은 ${formDays===1?'당일':'오늘 포함 최근 '+formDays+'일'}만 입력·수정할 수 있습니다. 이 날짜의 수정은 '수정' 권한자에게 요청하세요.`;}
   $('#dState').textContent=cache[d]?`저장됨 (${fmtTs(cache[d].updated_at)} ${cache[d].updated_by||''})`:'미입력';}
 dDate.onchange=loadDay;$('#dPrev').onclick=()=>{dDate.value=addDays(dDate.value,-1);loadDay();};$('#dNext').onclick=()=>{dDate.value=addDays(dDate.value,1);loadDay();};$('#dToday').onclick=()=>{dDate.value=today();loadDay();};
-async function saveDay(){if(!session){showLogin('login');return;}const row=readForm();row.updated_by=myName();row.device_id=deviceId;
-  const btns=[$('#dSave'),$('#dSave2')];btns.forEach(b=>b.disabled=true);
-  try{const j=await api('일일저장',{row});cache[row.sales_date]=j.row;toast('저장되었습니다.');$('#dState').textContent=`저장됨 (${fmtTs(j.row.updated_at)} ${j.row.updated_by||''})`;}
-  catch(e){if(e.status===403||e.status===400){toast(e.message,true);}else{enqueue('일일저장',{row});toast('서버 연결 실패 → 대기열에 보관했습니다 (자동 재전송).',true);}}
-  btns.forEach(b=>b.disabled=false);}
-$('#dSave').onclick=saveDay;$('#dSave2').onclick=saveDay;
+async function saveDay(force){if(!session){showLogin('login');return false;}const row=readForm();row.updated_by=myName();row.device_id=deviceId;
+  const btns=[$('#dSave'),$('#dSave2')];btns.forEach(b=>b.disabled=true);let ok=false;
+  const base=cache[row.sales_date]?cache[row.sales_date].updated_at:null;
+  try{const j=await api('일일저장',{row,base_updated_at:base,force:!!force});cache[row.sales_date]=j.row;dailyDirty=false;toast('저장되었습니다.');$('#dState').textContent=`저장됨 (${fmtTs(j.row.updated_at)} ${j.row.updated_by||''})`;ok=true;}
+  catch(e){if(e.status===409&&e.data&&e.data.conflict){showConflict('daily',row.sales_date,e.data.current,row);}
+    else if(e.status===403||e.status===400){toast(e.message,true);}else{enqueue('일일저장',{row,force:true});toast('서버 연결 실패 → 대기열에 보관했습니다 (자동 재전송).',true);}}
+  btns.forEach(b=>b.disabled=false);return ok;}
+$('#dSave').onclick=()=>saveDay(false);$('#dSave2').onclick=()=>saveDay(false);
 
 /* ============ 항차일지 (항차별 탑승 직원·고객반응) ============ */
 const vDate=$('#vDate');
@@ -1048,7 +1061,7 @@ function vlogVoyages(d){ // 그날의 항차 목록: 1~5항차(일일입력 상�
   (row.extra_voyages||[]).forEach(e=>{if(!e.name)return;out.push({key:'x:'+e.name,name:e.name,product:e.product||'',time:e.time||'',status:e.status||'운항',run:isRunEx(e),scheduled:true});});
   return out;}
 function vlogStaffNames(){const set=new Set();Object.values(voyagelogByDate).forEach(v=>(v&&v.entries||[]).forEach(e=>String(e.staff||'').split(/[,、/·]/).forEach(n=>{n=n.trim();if(n)set.add(n);})));return [...set];}
-function buildVlogGrid(d){const tb=$('#vBody');tb.innerHTML='';const saved=voyagelogByDate[d];const ents={};((saved&&saved.entries)||[]).forEach(e=>ents[e.key]=e);
+function buildVlogGrid(d){vlogDirty=false;const tb=$('#vBody');tb.innerHTML='';const saved=voyagelogByDate[d];const ents={};((saved&&saved.entries)||[]).forEach(e=>ents[e.key]=e);
   vlogVoyages(d).forEach(v=>{const e=ents[v.key]||{};const tr=document.createElement('tr');tr.dataset.key=v.key;tr.dataset.name=v.name;if(!v.run)tr.style.opacity='.6';
     tr.innerHTML=`<td class="c"><b>${esc(v.name)}</b></td><td class="c">${esc(v.product||'')}${v.time?`<div class="hint">(${esc(v.time)})</div>`:''}</td><td class="c ${v.run?'':'hint'}">${esc(v.status)}</td>
       <td><input type="number" min="0" max="99" step="1" data-vk="staff_count" value="${e.staff_count||''}"></td>
@@ -1060,7 +1073,7 @@ function buildVlogGrid(d){const tb=$('#vBody');tb.innerHTML='';const saved=voyag
   ((saved&&saved.entries)||[]).forEach(e=>{if($(`#vBody tr[data-key="${CSS.escape(e.key)}"]`))return;const tr=document.createElement('tr');tr.dataset.key=e.key;tr.dataset.name=e.name;tr.style.background='#FFF8E6';
     tr.innerHTML=`<td class="c"><b>${esc(e.name)}</b><div class="hint">일일입력에 없음</div></td><td class="c hint">—</td><td class="c hint">—</td><td><input type="number" min="0" max="99" step="1" data-vk="staff_count" value="${e.staff_count||''}"></td><td><input type="text" data-vk="staff" list="vStaffList" value="${esc(e.staff||'')}" style="text-align:left"></td><td><textarea data-vk="reaction" rows="2" style="min-height:44px;font-size:13px;padding:5px 7px">${esc(e.reaction||'')}</textarea></td><td><input type="text" data-vk="note" value="${esc(e.note||'')}" style="text-align:left"></td>`;tb.appendChild(tr);});
   $('#vStaffList').innerHTML=vlogStaffNames().map(n=>`<option value="${esc(n)}">`).join('');
-  $$('#vBody input,#vBody textarea').forEach(el=>{el.addEventListener('input',vlogRecalc);});vlogRecalc();}
+  $$('#vBody input,#vBody textarea').forEach(el=>{el.addEventListener('input',()=>{vlogDirty=true;vlogRecalc();});});vlogRecalc();}
 function vlogRecalc(){let t=0,n=0;$$('#vBody tr').forEach(tr=>{const c=Number(tr.querySelector('[data-vk=staff_count]').value||0);t+=c;if(c||tr.querySelector('[data-vk=staff]').value.trim()||tr.querySelector('[data-vk=reaction]').value.trim())n++;});$('#vTotStaff').textContent=fmt(t);$('#vTotNote').textContent=n?`${n}개 항차 기록`:'';}
 function readVlog(){return $$('#vBody tr').map(tr=>{const o={key:tr.dataset.key,name:tr.dataset.name};tr.querySelectorAll('[data-vk]').forEach(el=>{o[el.dataset.vk]=el.type==='number'?(el.value===''?0:Number(el.value)):el.value.trim();});return o;}).filter(o=>o.staff_count||o.staff||o.reaction||o.note);}
 async function loadVlog(){const d=vDate.value;if(!d)return;$('#vLock').hidden=true;
@@ -1070,14 +1083,76 @@ async function loadVlog(){const d=vDate.value;if(!d)return;$('#vLock').hidden=tr
   const ago=Math.round((Date.parse(today())-Date.parse(d))/86400000);
   if(!canEdit()&&(ago<0||ago>=formDays)){$('#vLock').hidden=false;$('#vLock').textContent=ago<0?'미래 날짜는 입력할 수 없습니다.':`'입력' 권한은 ${formDays===1?'당일':'오늘 포함 최근 '+formDays+'일'}만 기록·수정할 수 있습니다.`;}
   const sv=voyagelogByDate[d];$('#vState').textContent=sv?`저장됨 (${fmtTs(sv.updated_at)} ${sv.updated_by||''})`:(cache[d]?'미작성':'미작성 (일일 입력도 아직 없음)');}
-async function saveVlog(){if(!session){showLogin('login');return;}const d=vDate.value;const author=$('#vAuthor').value.trim();if(!author){toast('작성자 이름을 입력하세요.',true);$('#vAuthor').focus();return;}
+async function saveVlog(force){if(!session){showLogin('login');return;}const d=vDate.value;const author=$('#vAuthor').value.trim();if(!author){toast('작성자 이름을 입력하세요.',true);$('#vAuthor').focus();return;}
   const entries=readVlog();if(!entries.length){toast('기록할 내용이 없습니다.',true);return;}LS.set('dsAuthor_v1',author);
   const btns=[$('#vSave'),$('#vSave2')];btns.forEach(b=>b.disabled=true);
-  try{const j=await api('항차일지저장',{sales_date:d,entries,author,device_id:deviceId});voyagelogByDate[d]=j.item;toast('항차일지가 저장되었습니다.');$('#vState').textContent=`저장됨 (${fmtTs(j.item.updated_at)} ${j.item.updated_by||''})`;}
-  catch(e){if(e.status===403||e.status===400)toast(e.message,true);else{enqueue('항차일지저장',{sales_date:d,entries,author,device_id:deviceId});toast('서버 연결 실패 → 대기열에 보관했습니다 (자동 재전송).',true);}}
+  const base=voyagelogByDate[d]?voyagelogByDate[d].updated_at:null;
+  try{const j=await api('항차일지저장',{sales_date:d,entries,author,device_id:deviceId,base_updated_at:base,force:!!force});voyagelogByDate[d]=j.item;vlogDirty=false;toast('항차일지가 저장되었습니다.');$('#vState').textContent=`저장됨 (${fmtTs(j.item.updated_at)} ${j.item.updated_by||''})`;}
+  catch(e){if(e.status===409&&e.data&&e.data.conflict){showConflict('vlog',d,e.data.current,{entries});}
+    else if(e.status===403||e.status===400)toast(e.message,true);else{enqueue('항차일지저장',{sales_date:d,entries,author,device_id:deviceId,force:true});toast('서버 연결 실패 → 대기열에 보관했습니다 (자동 재전송).',true);}}
   btns.forEach(b=>b.disabled=false);}
 vDate.onchange=loadVlog;$('#vPrev').onclick=()=>{vDate.value=addDays(vDate.value,-1);loadVlog();};$('#vNext').onclick=()=>{vDate.value=addDays(vDate.value,1);loadVlog();};$('#vToday').onclick=()=>{vDate.value=today();loadVlog();};
-$('#vSave').onclick=saveVlog;$('#vSave2').onclick=saveVlog;
+$('#vSave').onclick=()=>saveVlog(false);$('#vSave2').onclick=()=>saveVlog(false);
+
+/* ============ 동시 수정 방지 · 실시간 갱신 (v2.8) ============ */
+let dailyDirty=false,vlogDirty=false,cfCtx=null;
+const FIELD_LABEL=(k)=>{const m=k.match(/^v(\d)_(\w+)$/);if(m){const L={adult:'현장일반',disc:'현장우대',free:'현장무료',online:'온라인',rev:'매출',status:'운항',note:'비고',product:'상품',time:'시간'};return `${m[1]}항차 ${L[m[2]]||m[2]}`;}
+  return {etc_rev:'기타 매출',etc_note:'기타 비고',hyojeong_rev:'효정1호',cvs_rev:'선내 편의점',goods_rev:'굿즈샵',pos_pax:'포스상 인원',memo:'일 메모',noshow_rev:'노쇼 매출',noshow_pax:'노쇼 인원',items:'참고 항목',extra_voyages:'추가 항차',extra_pax:'항차 외 인원',extra_pax_note:'항차 외 비고'}[k]||k;};
+const fmtVal=(k,v)=>{if(v==null||v==='')return '-';if(k==='items')return (v||[]).map(i=>`${i.kind} ${i.name||''} ${fmt(i.amount)}원/${fmt(i.qty)}`).join(', ')||'-';
+  if(k==='extra_voyages')return (v||[]).map(e=>`${e.name}${e.time?'('+e.time+')':''} ${fmt(e.rev)}원`).join(', ')||'-';if(typeof v==='number')return fmt(v);return String(v);};
+function diffDaily(theirs,mine){const keys=Object.keys(mine).filter(k=>!['sales_date','updated_by','device_id','updated_at','created_at'].includes(k));const out=[];
+  keys.forEach(k=>{const a=theirs?theirs[k]:null,b=mine[k];const na=(k==='items'||k==='extra_voyages')?JSON.stringify(a||[]):(a==null?'':String(a));const nb=(k==='items'||k==='extra_voyages')?JSON.stringify(b||[]):(b==null?'':String(b));
+    if(na!==nb&&!(na===''&&nb==='0')&&!(na==='0'&&nb===''))out.push([FIELD_LABEL(k),fmtVal(k,a),fmtVal(k,b)]);});return out;}
+function diffVlog(theirs,mine){const A={},B={};((theirs&&theirs.entries)||[]).forEach(e=>A[e.key]=e);(mine.entries||[]).forEach(e=>B[e.key]=e);const out=[];
+  [...new Set([...Object.keys(A),...Object.keys(B)])].forEach(k=>{const a=A[k],b=B[k];const f=(e)=>e?`${e.staff_count||0}명 / ${e.staff||''} / ${e.reaction||''} / ${e.note||''}`:'-';if(f(a)!==f(b))out.push([(a||b).name,f(a),f(b)]);});return out;}
+function showConflict(kind,d,current,mine){cfCtx={kind,d,current,mine};const who=current?`${current.updated_by||'다른 사용자'}님이 ${fmtTs(current.updated_at)}에`:'다른 사용자가';
+  $('#cfSub').textContent=`${d} ${kind==='daily'?'일일 입력':'항차일지'} — ${who} 먼저 저장했습니다. 내 화면은 그 전 내용을 기준으로 하고 있어 그대로 저장하면 상대방 내용이 지워집니다.`;
+  const rows=kind==='daily'?diffDaily(current,mine):diffVlog(current,mine);
+  $('#cfTable').className='tbl cf-diff';$('#cfTable').innerHTML=`<thead><tr><th class="c">항목</th><th class="c">상대방이 저장한 값</th><th class="c">내 화면 값</th></tr></thead><tbody>`+(rows.length?rows.map(r=>`<tr><td class="l"><b>${esc(r[0])}</b></td><td class="l chg">${esc(r[1])}</td><td class="l">${esc(r[2])}</td></tr>`).join(''):`<tr><td colspan="3" class="c hint">값 차이 없음 (같은 내용) — 최신 내용 불러오기를 눌러 맞추면 됩니다</td></tr>`)+`</tbody>`;
+  $('#conflictBox').hidden=false;}
+function cfApplyLatest(){const {kind,d,current}=cfCtx;$('#conflictBox').hidden=true;
+  if(kind==='daily'){if(current)cache[d]=current;else delete cache[d];delete worklogByDate[d];if(dDate.value===d){fillForm(cache[d]);$('#dState').textContent=cache[d]?`저장됨 (${fmtTs(cache[d].updated_at)} ${cache[d].updated_by||''})`:'미입력';}}
+  else{voyagelogByDate[d]=current||null;if(vDate.value===d){buildVlogGrid(d);$('#vState').textContent=current?`저장됨 (${fmtTs(current.updated_at)} ${current.updated_by||''})`:'미작성';}}
+  toast('최신 내용을 불러왔습니다. 필요한 부분만 다시 입력 후 저장하세요.');cfCtx=null;}
+$('#cfCancel').onclick=()=>{$('#conflictBox').hidden=true;cfCtx=null;};
+$('#cfLoad').onclick=cfApplyLatest;
+$('#cfForce').onclick=async()=>{const {kind,d,current}=cfCtx;if(!confirm(`${current?(current.updated_by||'상대방')+'님이 저장한 내용':'상대방 내용'}을 지우고 내 화면 값으로 덮어쓸까요?`))return;$('#conflictBox').hidden=true;
+  if(kind==='daily'){if(current)cache[d]=current;else delete cache[d];await saveDay(true);}else{voyagelogByDate[d]=current||null;await saveVlog(true);}cfCtx=null;};
+
+/* 폴링: 보고 있는 탭의 날짜 범위에서 다른 사용자의 저장을 감지 → 입력 중이 아니면 자동 반영, 입력 중이면 배너 */
+const POLL_MS=10000;let pollBusy=false,liveCtx=null;
+function activeTab(){const b=$('nav button.on');return b?b.dataset.tab:'daily';}
+function pollRange(){const t=activeTab();if(t==='daily')return [dDate.value,dDate.value];if(t==='vlog')return [vDate.value,vDate.value];if(t==='report')return [$('#rDate').value||today(),$('#rDate').value||today()];
+  if(t==='week'){const m=mondayOf($('#wDate').value||today());return [m,addDays(m,6)];}if(t==='month'){const ym=$('#mMonth').value||today().slice(0,7);return [ym+'-01',ym+'-'+String(daysInMonth(ym)).padStart(2,'0')];}return null;}
+const tsEq=(a,b)=>(!a&&!b)||(!!a&&!!b&&Date.parse(a)===Date.parse(b));
+async function pollChanges(){if(pollBusy||!session||document.hidden||!$('#loginOverlay').hidden)return;const rg=pollRange();if(!rg||!rg[0]||!rg[1])return;pollBusy=true;
+  try{const j=await api('변경확인',{from:rg[0],to:rg[1]},{timeout:8000});const changed=[];let who='',when='';
+    const seen=new Set();for(let d=rg[0];d<=rg[1];d=addDays(d,1))seen.add(d);
+    // 일일 입력
+    const rowBy={};j.rows.forEach(r=>rowBy[r.sales_date]=r);
+    seen.forEach(d=>{if(!loadedDays.has(d))return; /* 아직 불러온 적 없는 날은 건너뜀 */
+      const srv=rowBy[d];const loc=cache[d];if(!tsEq(srv&&srv.updated_at,loc&&loc.updated_at)){changed.push(d);if(srv){who=srv.updated_by||'';when=srv.updated_at;}}});
+    // 항차일지
+    const vBy={};(j.voyagelog||[]).forEach(v=>vBy[v.sales_date]=v);
+    seen.forEach(d=>{if(!loadedDays.has(d))return;const srv=vBy[d];const loc=voyagelogByDate[d];if(!tsEq(srv&&srv.updated_at,loc&&loc.updated_at)){if(!changed.includes(d))changed.push(d);if(srv){who=srv.updated_by||who;when=srv.updated_at;}}});
+    // 업무일지(건수·최종 수정시각)
+    seen.forEach(d=>{if(!loadedDays.has(d))return;const srv=(j.worklog||{})[d];const loc=worklogByDate[d]||[];const ln=loc.length,lts=loc.reduce((m,x)=>String(x.updated_at)>m?String(x.updated_at):m,'');
+      if((srv?srv.n:0)!==ln||(srv&&lts&&!tsEq(srv.updated_at,lts))){if(!changed.includes(d))changed.push(d);if(srv){who=srv.updated_by||who;when=srv.updated_at;}}});
+    if(changed.length)await applyRemoteChanges(changed,who,when);
+  }catch(e){/* 네트워크 오류는 조용히 */}
+  pollBusy=false;}
+async function applyRemoteChanges(dates,who,when){const t=activeTab();const from=dates.slice().sort()[0],to=dates.slice().sort().pop();
+  const editing=(t==='daily'&&dailyDirty&&dates.includes(dDate.value))||(t==='vlog'&&vlogDirty&&dates.includes(vDate.value));
+  if(editing){liveCtx={dates,who,when};$('#liveMsg').textContent=`${who||'다른 사용자'}님이 ${when?fmtTs(when):'방금'} 이 날짜를 저장했습니다. 입력 중인 내용이 있어 자동으로 바꾸지 않았습니다.`;$('#liveBar').hidden=false;return;}
+  await loadRange(from,to);
+  if(t==='daily'&&dates.includes(dDate.value)){fillForm(cache[dDate.value]);renderWorklog();$('#dState').textContent=cache[dDate.value]?`저장됨 (${fmtTs(cache[dDate.value].updated_at)} ${cache[dDate.value].updated_by||''})`:'미입력';}
+  else if(t==='vlog'&&dates.includes(vDate.value)){buildVlogGrid(vDate.value);const sv=voyagelogByDate[vDate.value];$('#vState').textContent=sv?`저장됨 (${fmtTs(sv.updated_at)} ${sv.updated_by||''})`:'미작성';}
+  else if(t==='report')renderReport();else if(t==='week')renderWeek(true);else if(t==='month')renderMonth(true);
+  toast(`${who||'다른 사용자'}님이 저장한 최신 내용으로 갱신했습니다.`);}
+$('#liveApply').onclick=async()=>{if(!liveCtx)return;if(!confirm('입력 중인 내용을 버리고 최신 내용을 불러올까요?'))return;$('#liveBar').hidden=true;dailyDirty=false;vlogDirty=false;const c=liveCtx;liveCtx=null;await applyRemoteChanges(c.dates,c.who,c.when);};
+$('#liveDismiss').onclick=()=>{$('#liveBar').hidden=true;};
+setInterval(pollChanges,POLL_MS);document.addEventListener('visibilitychange',()=>{if(!document.hidden)pollChanges();});window.__dsPoll=pollChanges; // 테스트·디버그용
+$$('nav button').forEach(b=>b.addEventListener('click',()=>{$('#liveBar').hidden=true;liveCtx=null;}));
 
 /* ============ 일일 보고 (경영진 보고용) ============ */
 const rDate=$('#rDate');
@@ -1144,7 +1219,7 @@ $('#kkApply').onclick=async()=>{if(!session){showLogin('login');return;}const re
   fillForm(row);renderWorklog();
   const vs=[...Object.keys(pk.voy).map(v=>v+'항차'),...pk.extras.map(e=>'['+e.name+']')].join('·');const lines=[`${pk.date} · ${vs} 읽음 · 편의점 ${pk.cvs==null?'-':fmt(pk.cvs)} · 굿즈샵 ${pk.goods==null?'-':fmt(pk.goods)}${pk.noshowRev!=null?' · 노쇼 '+fmt(pk.noshowRev)+'원 '+(pk.noshowPax||0)+'명':''}${pk.memo.length?' · 메모 '+pk.memo.length+'줄':''}${pk.cafe!=null?' · (마리나카페 '+fmt(pk.cafe)+'원은 앱 항목이 아니라 제외)':''}`];
   if(pk.warnings.length){res.style.color='var(--red)';lines.push('⚠ '+pk.warnings.join('\n⚠ '));lines.push('수치가 맞지 않아 자동 저장하지 않았습니다. 내용을 확인하고 저장 버튼을 눌러 주세요.');res.textContent=lines.join('\n');return;}
-  if($('#kkAuto').checked){await saveDay();lines.push('✔ 검증 통과 → 저장했습니다.');}else lines.push('검증 통과. 저장 버튼을 눌러 주세요.');
+  if($('#kkAuto').checked){const okd=await saveDay();lines.push(okd?'✔ 검증 통과 → 저장했습니다.':'검증 통과했지만 저장되지 않았습니다 (다른 사용자 저장과 충돌 또는 오류). 안내창을 확인하세요.');}else lines.push('검증 통과. 저장 버튼을 눌러 주세요.');
   res.textContent=lines.join('\n');};
 
 /* ---------- 업무일지 (일일 탭) ---------- */
