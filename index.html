@@ -106,7 +106,7 @@ table{border-collapse:collapse;width:100%}
 .toast.err{background:var(--red)}
 .notes{font-size:12px;color:var(--slate)}
 .notes li{margin:2px 0}
-.wf-cancel td{color:var(--stone);text-decoration:line-through}.wf-cancel td .pill{text-decoration:none}#wfTbl td{white-space:nowrap}#wfTbl select{min-width:104px;text-align:left}#wfTbl select[data-k="ledger"]{min-width:124px}#wfTbl select[data-k="credit_org"]{min-width:100px}
+.wf-cancel td{color:var(--stone);text-decoration:line-through}.wf-cancel td .pill{text-decoration:none}#wfTbl td{white-space:nowrap}#wfTbl select{min-width:104px;text-align:left}#wfTbl select[data-k="ledger"]{min-width:124px}#wfTbl select[data-k="credit_org"]{min-width:100px}#wfTbl select[data-k="relation"]{min-width:64px}
 @media (max-width:720px){.hwrap{padding:8px 10px}main{padding:10px}.card{padding:12px}.tbl th,.tbl td{padding:5px 5px}}
 /* 일일 보고 */
 .rpt{max-width:820px;margin:0 auto;color:var(--ink)}
@@ -1202,7 +1202,8 @@ async function renderReport(force){const d=rDate.value||today();rDate.value=d;co
   try{if(force||!cache[d]||!worklogByDate[d])await loadRange(d,d);}catch(e){toast(e.message,true);}
   const row=cache[d];const items=worklogByDate[d]||[];const dt=d2(d);const hol=sched.isHoliday(d);const vs=sched(d);const cap=sched.cap;
   const dateKo=`${dt.getFullYear()}년 ${dt.getMonth()+1}월 ${dt.getDate()}일 (${WD[dt.getDay()]})${hol?' · 공휴일':''}`;
-  if(!row){el.innerHTML=`<div class="rh"><div><h1>크루즈 사업본부 일일 매출 보고</h1><div class="sub">가평크루즈</div></div><div class="date"><b>${dateKo}</b></div></div><div class="empty">이 날짜의 일일 입력 데이터가 없습니다.${vs.length?'':' (스케줄상 휴무일)'}</div>`;$('#rState').textContent='미입력';return;}
+  const wfH=await wfReportSection(d); // 임직원 할인 (당일 내역 있을 때만 문자열, 없으면 '')
+  if(!row){el.innerHTML=`<div class="rh"><div><h1>크루즈 사업본부 일일 매출 보고</h1><div class="sub">가평크루즈</div></div><div class="date"><b>${dateKo}</b></div></div><div class="empty">이 날짜의 일일 입력 데이터가 없습니다.${vs.length?'':' (스케줄상 휴무일)'}</div>${wfH}`;$('#rState').textContent='미입력';return;}
   const a=aggregate([row]);const nRun=vs.length+a.exRuns;const rate=nRun?a.paxSum/(cap*nRun):0;
   const exk=(k)=>a.exNames.reduce((s,n)=>s+a.ex[n].pax[k],0);
   const num=(v,cls)=>`<td class="num${cls?' '+cls:''}">${v?fmt(v):'<span style="color:var(--stone)">-</span>'}</td>`;
@@ -1233,6 +1234,7 @@ async function renderReport(force){const d=rDate.value||today();rDate.value=d;co
   h+=`<div class="two"><div>${compH}</div><div>${refH}${row.memo?`<h3>일 메모</h3><div class="memo">${esc(row.memo)}</div>`:''}</div></div>`;
   if(!refH&&!row.memo)h=h.replace('<div class="two"><div>','<div class="two" style="grid-template-columns:1fr;max-width:460px"><div>');
   if(items.length)h+=`<h3>주요 업무 · 특이사항</h3><div>${items.map(it=>`<div class="wl"><div class="body">${(it.tags||[]).map(t=>tagChip(t,true,true)).join('')}<div>${esc(it.content)}</div></div></div>`).join('')}</div>`;
+  h+=wfH;
   h+=`<div class="rf"><span>가평크루즈 크루즈 사업본부 · 일일매출 시스템</span><span>출력 ${fmtTs(new Date().toISOString())}</span></div>`;
   // ---- 2페이지: 항차일지 보고 ----
   const vl=voyagelogByDate[d];const ents=(vl&&vl.entries)||[];
@@ -1504,7 +1506,8 @@ function wfRender(){const tb=$('#wfBody');wfKpi(wfRows);$('#wfCount').textConten
   tb.innerHTML=wfRows.map(r=>{const lock=!(canEdit()||(r.use_date===today()&&r.status!=='청구완료'));const dis=lock?' disabled':'';const st={'접수':'warn','금액확정':'ok','청구완료':'','취소':'err'}[r.status]||'';
     return `<tr data-id="${r.id}" class="${r.status==='취소'?'wf-cancel':''}">
      <td class="c"><input type="checkbox" class="wfChk" data-id="${r.id}"></td><td class="c num">${esc(r.receipt_no||'')}</td><td class="c">${esc(r.use_date)}<div class="hint" style="font-size:11px">${esc((r.submitted_at||'').slice(11,16))}</div></td>
-     <td class="l" style="white-space:normal;min-width:120px">${esc(r.org_name)}</td><td class="c">${esc(r.staff_name)}</td><td class="c">${esc(r.relation)}</td>
+     <td class="l" style="white-space:normal;min-width:120px">${canEdit()?`<input type="text" data-k="org_name" value="${esc(r.org_name)}" maxlength="60" style="width:150px;text-align:left" title="명함상 소속기관 (수정 권한)">`:esc(r.org_name)}</td><td class="c">${canEdit()?`<input type="text" data-k="staff_name" value="${esc(r.staff_name)}" maxlength="30" style="width:80px;text-align:center" title="명함상 성명 (수정 권한)">`:esc(r.staff_name)}</td>
+     <td class="c"><select data-k="relation"${dis}>${['본인','가족','지인','기타'].map(v=>`<option${v===r.relation?' selected':''}>${v}</option>`).join('')}</select></td>
      <td class="c"><select data-k="use_type"${dis}>${['크루즈 승선','굿즈샵','선내매점'].map(v=>`<option${v===r.use_type?' selected':''}>${v}</option>`).join('')}</select></td>
      <td class="c"><select data-k="ledger"${dis}>${['A','B','C'].map(v=>`<option value="${v}"${v===r.ledger?' selected':''}>${wfLedgerName[v]}</option>`).join('')}</select></td>
      <td class="c"><select data-k="credit_org"${dis}><option value="">미정</option>${['글로벌재단','청심교회'].map(v=>`<option${v===r.credit_org?' selected':''}>${v}</option>`).join('')}</select></td>
@@ -1525,7 +1528,8 @@ function wfRender(){const tb=$('#wfBody');wfKpi(wfRows);$('#wfCount').textConten
     g('credit_amt').addEventListener('input',()=>{const amt=+g('amount').value;if(g('amount').value)g('self_pay').value=Math.max(0,amt-(+g('credit_amt').value||0));});
     tr.querySelectorAll('input,select').forEach(el=>el.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();tr.querySelector('[data-save]').click();}}));});
   tb.querySelectorAll('[data-save]').forEach(b=>b.onclick=async()=>{const tr=b.closest('tr');const g=k=>tr.querySelector(`[data-k="${k}"]`).value;const v=k=>g(k)===''?null:+g(k);
-    const p={id:+b.dataset.save,use_type:g('use_type'),ledger:g('ledger'),credit_org:g('credit_org')||null,pax:v('pax'),amount:v('amount'),self_pay:v('self_pay'),credit_amt:v('credit_amt'),note:g('note')};
+    const p={id:+b.dataset.save,use_type:g('use_type'),relation:g('relation'),ledger:g('ledger'),credit_org:g('credit_org')||null,pax:v('pax'),amount:v('amount'),self_pay:v('self_pay'),credit_amt:v('credit_amt'),note:g('note')};
+    if(tr.querySelector('[data-k="org_name"]')){p.org_name=g('org_name').trim();p.staff_name=g('staff_name').trim();if(p.org_name.length<2||p.staff_name.length<2){toast('소속기관·성명은 2자 이상이어야 합니다.',true);return;}}
     if(p.amount!=null&&(p.self_pay==null||p.credit_amt==null)){toast('본인부담·외상액을 확인하세요.',true);return;}
     if(p.amount!=null&&p.credit_amt>0&&!p.credit_org){toast('외상 귀속기관(글로벌재단/청심교회)을 선택하세요.',true);return;}
     b.disabled=true;try{const j=await wfApi('금액저장',p);const i=wfRows.findIndex(x=>x.id===j.row.id);if(i>=0)wfRows[i]=j.row;toast('저장됨');wfRender();}catch(e){toast(e.message,true);b.disabled=false;}});
@@ -1566,6 +1570,13 @@ $('#wfAll').onchange=()=>$$('.wfChk').forEach(c=>c.checked=$('#wfAll').checked);
 $('#wfBulkDone').onclick=()=>wfBulk('청구완료');$('#wfBulkReopen').onclick=()=>wfBulk('접수');
 $('#wfQr').onclick=()=>{$('#wfQrUrl').textContent=WF_FORM_URL;$('#wfQrImg').innerHTML=WF_QR_SVG;$('#wfQrBox').hidden=false;};
 $('#wfQrClose').onclick=()=>{$('#wfQrBox').hidden=true;};
+// 일일 보고용: 해당 날짜 임직원 할인 내역(취소 제외)이 있을 때만 표 HTML 반환, 없거나 조회 실패면 ''
+async function wfReportSection(d){if(!session)return '';let rows=[];try{rows=((await wfApi('조회',{from:d,to:d})).rows||[]).filter(r=>r.status!=='취소');}catch(e){return '';}
+  if(!rows.length)return '';const num=(v)=>`<td class="num">${v==null||v===''?'<span style="color:var(--stone)">-</span>':fmt(v)}</td>`;const sum=(k,f)=>rows.filter(f||(()=>true)).reduce((a,r)=>a+(+r[k]||0),0);const noAmt=rows.filter(r=>r.amount==null).length;
+  let h=`<h3>천원단지 임직원 할인 이용 <span class="hint" style="font-weight:500">(QR 등록 ${rows.length}건 · 금액은 매표·POS 기준 입력값${noAmt?` · <span style="color:var(--red)">금액 미입력 ${noAmt}건</span>`:''})</span></h3><div class="tblwrap"><table class="tbl"><thead><tr><th class="c">접수번호</th><th class="c">시각</th><th class="l">소속기관</th><th class="c">성명</th><th class="c">관계</th><th class="c">이용구분</th><th>인원</th><th>이용금액</th><th>본인부담</th><th>외상액</th><th class="c">외상 귀속</th><th class="c">상태</th></tr></thead><tbody>`;
+  rows.forEach(r=>{h+=`<tr><td class="c num">${esc(r.receipt_no||'')}</td><td class="c">${esc((r.submitted_at||'').slice(11,16))}</td><td class="l" style="white-space:normal">${esc(r.org_name)}</td><td class="c">${esc(r.staff_name)}</td><td class="c">${esc(r.relation)}</td><td class="c">${esc(r.use_type)}</td>${num(r.pax)}${num(r.amount)}${num(r.self_pay)}${num(r.credit_amt)}<td class="c">${esc(r.credit_org||'-')}</td><td class="c">${esc(r.status)}</td></tr>`;});
+  h+=`<tr class="tot"><td class="c" colspan="6">합계 (${rows.length}건)</td>${num(sum('pax'))}${num(sum('amount'))}${num(sum('self_pay'))}${num(sum('credit_amt'))}<td class="c" colspan="2">-</td></tr></tbody></table></div><div class="hint" style="margin-top:4px">외상 귀속별 합계 — 글로벌재단 ${fmt(sum('credit_amt',r=>r.credit_org==='글로벌재단'))}원 · 청심교회 ${fmt(sum('credit_amt',r=>r.credit_org==='청심교회'))}원${sum('credit_amt',r=>!r.credit_org)?` · <span style="color:var(--red)">귀속 미정 ${fmt(sum('credit_amt',r=>!r.credit_org))}원</span>`:''}</div>`;
+  return h;}
 
 /* ---------- 로그인 / 시작 ---------- */
 $('#btnLogout').onclick=()=>{if(queue.length&&!confirm('미전송 데이터가 있습니다. 그래도 로그아웃할까요?'))return;clearSession();showLogin('login');};
