@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="robots" content="noindex">
+<title>임직원 할인 이용 등록 · 가평크루즈</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
+<style>
+:root{--font:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;--navy:#162E54;--navy-deep:#0E2140;--blue:#2E5C9A;--sky:#6BA3D6;--sky100:#E7F0F8;--sand:#C9A24B;--bg:#F5F7FA;--hair:#E2E8F0;--ink:#0B1626;--slate:#475569;--steel:#64748B;--green:#1E7D4F;--red:#D45656}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.5;-webkit-text-size-adjust:100%}
+button,input,select{font-family:inherit;font-size:inherit;color:inherit}
+.wrap{max-width:480px;margin:0 auto;padding:14px 14px 40px}
+.top{display:flex;align-items:baseline;gap:8px;padding:6px 2px 12px}
+.top b{color:var(--navy);font-size:19px;font-weight:800}
+.top span{color:var(--steel);font-size:13px;font-weight:600}
+.card{background:#fff;border:1px solid var(--hair);border-radius:16px;padding:18px 16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(22,46,84,.05)}
+h1{margin:0 0 4px;font-size:20px;color:var(--navy);letter-spacing:-.3px}
+.sub{color:var(--steel);font-size:13px;margin-bottom:6px}
+h2{margin:0 0 8px;font-size:15px;color:var(--navy)}
+.consent{background:var(--sky100);border-radius:12px;padding:12px 13px;font-size:13.5px;color:var(--ink)}
+.consent p{margin:0 0 6px}
+.consent ul{margin:4px 0 8px;padding-left:18px}
+.consent li{margin:3px 0}
+.consent .refuse{color:var(--slate);font-size:12.5px;margin:6px 0 0}
+label.chk{display:flex;gap:10px;align-items:flex-start;margin-top:12px;font-weight:700;color:var(--navy);cursor:pointer}
+label.chk input{width:22px;height:22px;margin:1px 0 0;flex:none;accent-color:var(--navy)}
+.f{display:block;margin:14px 0 0}
+.f>span{display:block;font-size:13px;font-weight:700;color:var(--slate);margin-bottom:6px}
+.f>span em{color:var(--red);font-style:normal;margin-left:2px}
+.f input[type=text]{width:100%;border:1px solid var(--hair);border-radius:10px;padding:12px 13px;background:#fff;font-size:17px}
+.f input:focus{outline:2px solid var(--sky);outline-offset:0;border-color:var(--sky)}
+.seg{display:grid;gap:8px;grid-template-columns:repeat(4,1fr)}
+.seg.three{grid-template-columns:repeat(3,1fr)}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label{display:flex;align-items:center;justify-content:center;min-height:46px;border:1px solid var(--hair);border-radius:10px;background:#fff;font-weight:600;color:var(--slate);cursor:pointer;text-align:center;padding:6px 4px;font-size:14.5px;user-select:none}
+.seg input:checked+label{background:var(--navy);border-color:var(--navy);color:#fff}
+.seg input:focus-visible+label{outline:2px solid var(--sky)}
+.btn{width:100%;border:0;border-radius:12px;padding:15px;font-size:17px;font-weight:800;background:var(--navy);color:#fff;cursor:pointer;margin-top:18px}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.ghost{background:#fff;color:var(--navy);border:1px solid var(--hair);font-weight:700;margin-top:10px}
+.err{color:var(--red);font-size:13px;min-height:18px;margin-top:8px;font-weight:600}
+.hint{font-size:12.5px;color:var(--steel);margin-top:8px}
+.hp{position:absolute;left:-9999px;top:-9999px;height:0;width:0;overflow:hidden}
+/* 완료 */
+.done{text-align:center}
+.done .ok{width:64px;height:64px;border-radius:50%;background:#E6F4EC;color:var(--green);display:flex;align-items:center;justify-content:center;margin:4px auto 10px;font-size:34px;font-weight:900}
+.done h1{font-size:22px}
+.done .show{margin:14px 0 6px;background:#FFF8E6;border:1px dashed var(--sand);border-radius:12px;padding:12px;font-weight:800;color:#7A5200;font-size:15.5px}
+.rcpt{background:var(--navy);color:#fff;border-radius:14px;padding:16px 14px;margin:12px 0}
+.rcpt small{display:block;opacity:.8;font-size:12px;font-weight:600;letter-spacing:.5px}
+.rcpt b{display:block;font-size:30px;font-weight:900;letter-spacing:1px;font-variant-numeric:tabular-nums}
+.rcpt .t{font-size:14px;opacity:.9;margin-top:4px}
+.sum{width:100%;border-collapse:collapse;font-size:15px;margin-top:4px}
+.sum th{text-align:center;vertical-align:middle;color:var(--steel);font-weight:600;padding:8px 6px;border-bottom:1px solid var(--hair);width:38%;background:#F8FAFC}
+.sum td{text-align:left;vertical-align:middle;padding:8px 10px;border-bottom:1px solid var(--hair);font-weight:700;color:var(--navy)}
+.foot{text-align:center;color:var(--steel);font-size:12px;margin-top:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><b>가평크루즈</b><span>천원단지 임직원 할인 이용 등록</span></div>
+
+  <!-- ===== 입력 ===== -->
+  <form id="frm" class="card" autocomplete="off" novalidate>
+    <h1>임직원 할인 이용 등록</h1>
+    <div class="sub">명함을 매표 직원에게 보여주신 뒤, 아래 내용을 입력하고 완료 화면을 제시해 주세요. (약 30초)</div>
+
+    <h2 style="margin-top:14px">개인정보 수집·이용 및 제3자 제공 동의</h2>
+    <div class="consent">
+      <p>천원단지 임직원 할인 적용을 위해 아래와 같이 개인정보를 수집·이용합니다.</p>
+      <ul>
+        <li><b>수집 항목</b>: 명함상 소속기관, 명함상 성명, 본인과의 관계(본인/가족/지인/기타), 이용구분</li>
+        <li><b>수집 목적</b>: 임직원 할인 적용, 이용내역 관리 및 소속기관 외상 청구·정산</li>
+        <li><b>보유 기간</b>: 청구·정산 완료 후 회계처리 기준에 따른 기간까지 보관 후 파기</li>
+        <li><b>제3자 제공</b>: 외상 청구·정산을 위해 이용내역(소속기관, 성명, 이용금액)을 글로벌재단 또는 청심교회에 제공합니다</li>
+      </ul>
+      <p class="refuse">동의를 거부할 수 있으나, 거부 시 임직원 할인 적용이 어렵습니다.</p>
+    </div>
+    <label class="chk"><input type="checkbox" id="consent" required><span>위 내용을 확인하였으며 동의합니다 <em style="color:var(--red);font-style:normal">(필수)</em></span></label>
+
+    <label class="f"><span>1. 명함상 소속기관 <em>*</em></span><input type="text" id="org" placeholder="예) 글로벌재단 ○○팀 / 청심교회 / 문화재단" maxlength="60" enterkeyhint="next"></label>
+    <label class="f"><span>2. 명함상 성명 <em>*</em></span><input type="text" id="name" placeholder="명함에 적힌 이름" maxlength="30" enterkeyhint="done"></label>
+
+    <div class="f"><span>3. 본인과의 관계 <em>*</em></span>
+      <div class="seg" id="rel">
+        <input type="radio" name="rel" id="rel1" value="본인"><label for="rel1">본인</label>
+        <input type="radio" name="rel" id="rel2" value="가족"><label for="rel2">가족</label>
+        <input type="radio" name="rel" id="rel3" value="지인"><label for="rel3">지인</label>
+        <input type="radio" name="rel" id="rel4" value="기타"><label for="rel4">기타</label>
+      </div>
+      <div class="hint">가족·지인이 이용하는 경우에도 명함상 임직원의 소속기관·성명을 적어 주세요.</div>
+    </div>
+
+    <div class="f"><span>4. 이용구분 <em>*</em></span>
+      <div class="seg three" id="use">
+        <input type="radio" name="use" id="use1" value="크루즈 승선"><label for="use1">크루즈 승선</label>
+        <input type="radio" name="use" id="use2" value="굿즈샵"><label for="use2">굿즈샵</label>
+        <input type="radio" name="use" id="use3" value="선내매점"><label for="use3">선내매점</label>
+      </div>
+    </div>
+
+    <div class="hp" aria-hidden="true"><label>website<input type="text" id="website" tabindex="-1" autocomplete="off"></label></div>
+    <div class="err" id="err"></div>
+    <button class="btn" type="submit" id="btnSubmit">등록하기</button>
+    <div class="hint" style="text-align:center">이용금액은 매표소에서 매표·POS 기록 기준으로 기록합니다.</div>
+  </form>
+
+  <!-- ===== 완료 ===== -->
+  <div id="done" class="card done" hidden>
+    <div class="ok">✓</div>
+    <h1>등록되었습니다</h1>
+    <div class="show">이 화면을 매표 직원에게 보여주세요</div>
+    <div class="rcpt"><small>접수번호</small><b id="rNo">—</b><div class="t" id="rTime">—</div></div>
+    <table class="sum">
+      <tr><th>소속기관</th><td id="rOrg"></td></tr>
+      <tr><th>성명</th><td id="rName"></td></tr>
+      <tr><th>관계</th><td id="rRel"></td></tr>
+      <tr><th>이용구분</th><td id="rUse"></td></tr>
+    </table>
+    <button class="btn ghost" type="button" id="btnAgain">다른 이용 건 추가 등록</button>
+    <div class="foot">가평크루즈 · 천원단지 임직원 복지 증진 및 시설 이용 활성화 사업</div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var API='https://tyottfcnjevrvbngcwsw.supabase.co/functions/v1/welfare-usage';
+  var $=function(s){return document.querySelector(s)};
+  var LS={get:function(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set:function(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+  var frm=$('#frm'),err=$('#err'),btn=$('#btnSubmit');
+  var dev=LS.get('wfDev');if(!dev){dev=(window.crypto&&crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random())).slice(0,32);LS.set('wfDev',dev);}
+  // 같은 폰에서 다시 들어오면 소속·성명만 미리 채움 (편의용, 수정 가능)
+  var last=LS.get('wfLast');if(last){$('#org').value=last.org||'';$('#name').value=last.name||'';}
+  // URL 파라미터 ?use=굿즈샵 로 이용구분 미리 선택 (매장별 QR 쓸 때)
+  try{var p=new URLSearchParams(location.search).get('use');if(p){var r=document.querySelector('#use input[value="'+p+'"]');if(r)r.checked=true;}}catch(e){}
+
+  function val(n){var r=document.querySelector('input[name="'+n+'"]:checked');return r?r.value:'';}
+  function fmtTs(iso){var d=new Date(iso);var z=function(n){return String(n).padStart(2,'0')};return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())+' '+z(d.getHours())+':'+z(d.getMinutes());}
+  function validate(){
+    if(!$('#consent').checked)return '개인정보 수집·이용 동의에 체크해 주세요.';
+    if($('#org').value.trim().length<2)return '명함상 소속기관을 입력해 주세요.';
+    if($('#name').value.trim().length<2)return '명함상 성명을 입력해 주세요.';
+    if(!val('rel'))return '본인과의 관계를 선택해 주세요.';
+    if(!val('use'))return '이용구분을 선택해 주세요.';
+    return '';
+  }
+  frm.addEventListener('submit',function(e){
+    e.preventDefault();
+    var m=validate();err.textContent=m;if(m){return;}
+    var body={작업:'제출',consent:true,org_name:$('#org').value.trim(),staff_name:$('#name').value.trim(),relation:val('rel'),use_type:val('use'),device_id:dev,website:$('#website').value};
+    btn.disabled=true;btn.textContent='등록 중…';
+    var ctrl=('AbortController' in window)?new AbortController():null;var tm=setTimeout(function(){if(ctrl)ctrl.abort();},20000);
+    fetch(API,{method:'POST',body:JSON.stringify(body),headers:{'Content-Type':'text/plain'},signal:ctrl?ctrl.signal:undefined})
+      .then(function(r){return r.json().catch(function(){throw new Error('서버 응답 오류 '+r.status)})})
+      .then(function(j){
+        if(!j.ok)throw new Error(j.error||'등록 실패');
+        LS.set('wfLast',{org:body.org_name,name:body.staff_name});
+        $('#rNo').textContent=j.receipt_no||'';$('#rTime').textContent=fmtTs(j.submitted_at||new Date().toISOString());
+        $('#rOrg').textContent=body.org_name;$('#rName').textContent=body.staff_name;$('#rRel').textContent=body.relation;$('#rUse').textContent=body.use_type;
+        frm.hidden=true;$('#done').hidden=false;window.scrollTo(0,0);
+      })
+      .catch(function(e){err.textContent=(e.name==='AbortError')?'서버 연결 시간 초과 — 통신 상태를 확인한 뒤 다시 눌러 주세요.':(e.message||'등록 실패');})
+      .then(function(){clearTimeout(tm);btn.disabled=false;btn.textContent='등록하기';});
+  });
+  $('#btnAgain').onclick=function(){
+    document.querySelectorAll('#rel input,#use input').forEach(function(r){r.checked=false;});$('#consent').checked=false;err.textContent='';
+    $('#done').hidden=true;frm.hidden=false;window.scrollTo(0,0);
+  };
+})();
+</script>
+</body>
+</html>
