@@ -106,7 +106,7 @@ table{border-collapse:collapse;width:100%}
 .toast.err{background:var(--red)}
 .notes{font-size:12px;color:var(--slate)}
 .notes li{margin:2px 0}
-.wf-cancel td{color:var(--stone);text-decoration:line-through}.wf-cancel td .pill{text-decoration:none}#wfTbl td{white-space:nowrap}#wfTbl select{min-width:104px;text-align:left}#wfTbl select[data-k="ledger"]{min-width:190px}#wfTbl input[data-k="credit_org"]{width:150px;text-align:left}#wfTbl select[data-k="relation"]{min-width:64px}
+.wf-cancel td{color:var(--stone);text-decoration:line-through}.wf-cancel td .pill{text-decoration:none}#wfTbl td{white-space:nowrap}#wfTbl select{min-width:104px;text-align:left}#wfTbl input[data-k="credit_org"]{width:150px;text-align:left}#wfTbl select[data-k="relation"]{min-width:64px}
 @media (max-width:720px){.hwrap{padding:8px 10px}main{padding:10px}.card{padding:12px}.tbl th,.tbl td{padding:5px 5px}}
 /* 일일 보고 */
 .rpt{max-width:820px;margin:0 auto;color:var(--ink)}
@@ -403,12 +403,11 @@ table{border-collapse:collapse;width:100%}
         <button class="btn sm" id="wfQr">QR 코드 보기</button>
       </div>
     </div>
-    <div class="hint" style="margin:4px 0 10px">임직원이 매표소 QR로 등록한 내역입니다. <b>이용금액은 매표·POS 기록 기준으로 여기서 입력</b>하면 본인부담·외상액이 자동 계산됩니다(수정 가능). 크루즈 승선 = 본인부담 2,000원×인원, 굿즈샵·선내매점 = 50%. 대장은 소속기관으로 자동 분류(A HJ천주천보수련원 / B 효정글로벌통일재단 / S 새정원 / C 크루즈 / D 기타)되며 바꿀 수 있고, 외상 귀속(청구처)은 직접 입력합니다(A·B는 기관명 자동 제안).</div>
+    <div class="hint" style="margin:4px 0 10px">임직원이 매표소 QR로 등록한 내역입니다. <b>이용금액은 매표·POS 기록 기준으로 여기서 입력</b>하면 본인부담·외상액이 자동 계산됩니다(수정 가능). 크루즈 승선 = 본인부담 2,000원×인원, 굿즈샵·선내매점 = 50%. 외상 귀속(청구처)은 등록된 소속기관이 자동으로 들어가며 직접 고칠 수 있습니다.</div>
     <div class="row">
       <label class="f">시작<input type="date" id="wfFrom"></label>
       <label class="f">종료<input type="date" id="wfTo"></label>
       <label class="f">상태<select id="wfStatus"><option value="">전체</option><option>접수</option><option>금액확정</option><option>청구완료</option><option>취소</option></select></label>
-      <label class="f">대장<select id="wfLedger"><option value="">전체</option><option value="A">A HJ천주천보수련원</option><option value="B">B 효정글로벌통일재단</option><option value="S">S 새정원</option><option value="C">C 크루즈</option><option value="D">D 기타</option></select></label>
       <button class="btn primary" id="wfLoad">조회</button>
       <button class="btn" id="wfToday">오늘</button>
       <button class="btn" id="wfMonth">이번 달</button>
@@ -421,7 +420,7 @@ table{border-collapse:collapse;width:100%}
     <div class="row between"><h3 style="margin:0">내역 <span class="hint" id="wfCount"></span></h3>
       <div class="row" id="wfBulk" hidden><button class="btn sm" id="wfBulkDone">선택 건 청구완료</button><button class="btn sm" id="wfBulkReopen">선택 건 접수로 복원</button></div></div>
     <div class="tblwrap" style="margin-top:8px"><table class="tbl" id="wfTbl"><thead><tr>
-      <th><input type="checkbox" id="wfAll" title="전체 선택"></th><th>접수번호</th><th>일자</th><th>소속기관</th><th>성명</th><th>관계</th><th>이용구분</th><th>대장</th><th>외상 귀속</th><th>인원</th><th>이용금액</th><th>본인부담</th><th>외상액</th><th>비고</th><th>상태</th><th>입력자</th><th>저장</th><th>처리</th>
+      <th><input type="checkbox" id="wfAll" title="전체 선택"></th><th>접수번호</th><th>일자</th><th>소속기관</th><th>성명</th><th>관계</th><th>이용구분</th><th>외상 귀속</th><th>인원</th><th>이용금액</th><th>본인부담</th><th>외상액</th><th>비고</th><th>상태</th><th>입력자</th><th>저장</th><th>처리</th>
     </tr></thead><tbody id="wfBody"></tbody></table></div><datalist id="wfOrgList"><option value="HJ천주천보수련원"><option value="효정글로벌통일재단"></datalist>
     <div class="hint" style="margin-top:6px">상태: 접수(금액 미입력) → 금액확정(금액 입력됨) → 청구완료(월말 청구 후 '수정' 권한자가 처리). 취소 건은 대장·집계에서 제외됩니다. '입력' 권한은 당일 내역의 금액만 입력할 수 있습니다.</div>
   </div>
@@ -1493,25 +1492,23 @@ async function wfApi(op,payload){
   clearTimeout(tm);let j;try{j=await r.json();}catch{throw new Error('서버 응답 오류 '+r.status);}
   if(!j.ok){if(j.login){clearSession();showLogin('login');$('#lgErr').textContent=j.error||'';}const e=new Error(j.error||('오류 '+r.status));e.status=r.status;throw e;}
   return j;}
-const wfLedgerName={A:'A HJ천주천보수련원',B:'B 효정글로벌통일재단',S:'S 새정원',C:'C 크루즈',D:'D 기타'};
 const WF_ORG_SUGGEST=['HJ천주천보수련원','효정글로벌통일재단']; // 청구처 입력 제안(직접 입력 가능)
-const wfCreditOrgs=(rows)=>[...new Set(rows.map(r=>r.credit_org).filter(Boolean))].sort((a,b)=>(WF_ORG_SUGGEST.indexOf(a)+1||99)-(WF_ORG_SUGGEST.indexOf(b)+1||99)||a.localeCompare(b,'ko'));const WF_LEDGERS=['A','B','S','C','D'];
+const wfCreditOrgs=(rows)=>[...new Set(rows.map(r=>r.credit_org).filter(Boolean))].sort((a,b)=>(WF_ORG_SUGGEST.indexOf(a)+1||99)-(WF_ORG_SUGGEST.indexOf(b)+1||99)||a.localeCompare(b,'ko'));
 function wfDefaultSelf(r,amount){const pax=Math.max(1,+r.pax||1);if(r.use_type==='크루즈 승선')return Math.min(amount,WF_SELF_PAY*pax);return Math.round(amount/2);}
 function wfInit(){if(!$('#wfFrom').value){const t=today();$('#wfFrom').value=t.slice(0,8)+'01';$('#wfTo').value=t;}$('#wfFormLink').href=WF_FORM_URL;if(!wfRows.length)wfLoad();}
-async function wfLoad(){try{const j=await wfApi('조회',{from:$('#wfFrom').value,to:$('#wfTo').value,status:$('#wfStatus').value||undefined,ledger:$('#wfLedger').value||undefined});wfRows=j.rows||[];wfRender();}catch(e){toast(e.message,true);}}
+async function wfLoad(){try{const j=await wfApi('조회',{from:$('#wfFrom').value,to:$('#wfTo').value,status:$('#wfStatus').value||undefined});wfRows=j.rows||[];wfRender();}catch(e){toast(e.message,true);}}
 function wfKpi(rows){const live=rows.filter(r=>r.status!=='취소');const sum=(k,f)=>live.filter(f||(()=>true)).reduce((a,r)=>a+(+r[k]||0),0);
   const noAmt=live.filter(r=>r.amount==null).length;
   $('#wfKpi').innerHTML=`<div><small>건수(취소 제외)</small><b>${live.length}</b></div><div><small>이용금액 합계</small><b class="num">${fmt(sum('amount'))}</b></div><div><small>본인부담 합계</small><b class="num">${fmt(sum('self_pay'))}</b></div>
    ${wfCreditOrgs(live).map(o=>`<div><small>외상 · ${esc(o)}</small><b class="num sand">${fmt(sum('credit_amt',r=>r.credit_org===o))}</b></div>`).join('')}${sum('credit_amt',r=>!r.credit_org)?`<div><small>외상 · 귀속 미정</small><b class="num" style="color:var(--red)">${fmt(sum('credit_amt',r=>!r.credit_org))}</b></div>`:''}<div><small>금액 미입력</small><b style="${noAmt?'color:var(--red)':''}">${noAmt}건</b></div>`;}
 function wfRender(){const tb=$('#wfBody');wfKpi(wfRows);$('#wfCount').textContent=wfRows.length?`${wfRows.length}건`:'';$('#wfBulk').hidden=!canEdit();$('#wfAll').checked=false;
-  if(!wfRows.length){tb.innerHTML='<tr><td colspan="18" class="c hint">조회된 내역이 없습니다.</td></tr>';return;}
+  if(!wfRows.length){tb.innerHTML='<tr><td colspan="17" class="c hint">조회된 내역이 없습니다.</td></tr>';return;}
   tb.innerHTML=wfRows.map(r=>{const lock=!(canEdit()||(r.use_date===today()&&r.status!=='청구완료'));const dis=lock?' disabled':'';const st={'접수':'warn','금액확정':'ok','청구완료':'','취소':'err'}[r.status]||'';
     return `<tr data-id="${r.id}" class="${r.status==='취소'?'wf-cancel':''}">
      <td class="c"><input type="checkbox" class="wfChk" data-id="${r.id}"></td><td class="c num">${esc(r.receipt_no||'')}</td><td class="c">${esc(r.use_date)}<div class="hint" style="font-size:11px">${esc(r.submitted_at?fmtTs(r.submitted_at).slice(-5):'')}</div></td>
      <td class="l" style="white-space:normal;min-width:120px">${canEdit()?`<input type="text" data-k="org_name" value="${esc(r.org_name)}" maxlength="60" style="width:150px;text-align:left" title="명함상 소속기관 (수정 권한)">`:esc(r.org_name)}</td><td class="c">${canEdit()?`<input type="text" data-k="staff_name" value="${esc(r.staff_name)}" maxlength="30" style="width:80px;text-align:center" title="명함상 성명 (수정 권한)">`:esc(r.staff_name)}</td>
      <td class="c"><select data-k="relation"${dis}>${['본인','가족','지인','기타'].map(v=>`<option${v===r.relation?' selected':''}>${v}</option>`).join('')}</select></td>
      <td class="c"><select data-k="use_type"${dis}>${['크루즈 승선','굿즈샵','선내매점'].map(v=>`<option${v===r.use_type?' selected':''}>${v}</option>`).join('')}</select></td>
-     <td class="c"><select data-k="ledger"${dis}>${WF_LEDGERS.map(v=>`<option value="${v}"${v===r.ledger?' selected':''}>${wfLedgerName[v]}</option>`).join('')}</select></td>
      <td class="c"><input type="text" data-k="credit_org" list="wfOrgList" value="${esc(r.credit_org||'')}" placeholder="청구처 직접 입력" maxlength="40"${dis}></td>
      <td><input type="number" min="0" step="1" data-k="pax" value="${r.pax??''}" style="width:56px"${dis}></td>
      <td><input type="number" min="0" step="1" data-k="amount" value="${r.amount??''}" placeholder="POS 금액" style="width:96px"${dis}></td>
@@ -1530,7 +1527,7 @@ function wfRender(){const tb=$('#wfBody');wfKpi(wfRows);$('#wfCount').textConten
     g('credit_amt').addEventListener('input',()=>{const amt=+g('amount').value;if(g('amount').value)g('self_pay').value=Math.max(0,amt-(+g('credit_amt').value||0));});
     tr.querySelectorAll('input,select').forEach(el=>el.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();tr.querySelector('[data-save]').click();}}));});
   tb.querySelectorAll('[data-save]').forEach(b=>b.onclick=async()=>{const tr=b.closest('tr');const g=k=>tr.querySelector(`[data-k="${k}"]`).value;const v=k=>g(k)===''?null:+g(k);
-    const p={id:+b.dataset.save,use_type:g('use_type'),relation:g('relation'),ledger:g('ledger'),credit_org:g('credit_org').trim()||null,pax:v('pax'),amount:v('amount'),self_pay:v('self_pay'),credit_amt:v('credit_amt'),note:g('note')};
+    const p={id:+b.dataset.save,use_type:g('use_type'),relation:g('relation'),credit_org:g('credit_org').trim()||null,pax:v('pax'),amount:v('amount'),self_pay:v('self_pay'),credit_amt:v('credit_amt'),note:g('note')};
     if(tr.querySelector('[data-k="org_name"]')){p.org_name=g('org_name').trim();p.staff_name=g('staff_name').trim();if(p.org_name.length<2||p.staff_name.length<2){toast('소속기관·성명은 2자 이상이어야 합니다.',true);return;}}
     if(p.amount!=null&&(p.self_pay==null||p.credit_amt==null)){toast('본인부담·외상액을 확인하세요.',true);return;}
     if(p.amount!=null&&p.credit_amt>0&&!p.credit_org){toast('외상 귀속(청구처)을 입력하세요.',true);return;}
@@ -1553,17 +1550,16 @@ async function wfExcel(){const rows=wfRows.filter(r=>r.status!=='취소');if(!ro
   const s=wb.addWorksheet('집계');s.getCell('A1').value=`천원단지 임직원 할인 이용내역 집계 (${from} ~ ${to}) — 가평크루즈 (크루즈 승선·굿즈샵·선내매점)`;s.getCell('A1').font={bold:true,size:13,color:{argb:'FF162E54'}};s.mergeCells('A1:G1');
   s.addRow([]);const hdr=s.addRow(['구분','건수','인원','이용금액','본인부담','외상액','외상 귀속']);hdr.eachCell(c=>{c.font={bold:true,color:{argb:'FFFFFFFF'}};c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF162E54'}};c.alignment=center;c.border=border;});
   const grp=(label,arr,org)=>{const r=s.addRow([label,arr.length,rows2sum(arr,'pax'),rows2sum(arr,'amount'),rows2sum(arr,'self_pay'),rows2sum(arr,'credit_amt'),org||'']);r.eachCell({includeEmpty:true},(c,i)=>{c.border=border;c.alignment={vertical:'middle',horizontal:i>=2&&i<=6?'right':'center'};if(i>=2&&i<=6)c.numFmt='#,##0';});return r;};
-  WF_LEDGERS.forEach(L=>grp('대장 '+wfLedgerName[L].slice(2)+' 임직원',rows.filter(r=>r.ledger===L),''));
-  s.addRow([]);wfCreditOrgs(rows).forEach(o=>{const r=grp('외상 청구 → '+o,rows.filter(r=>r.credit_org===o),o);r.getCell(1).font={bold:true};r.getCell(6).font={bold:true,color:{argb:'FFC9A24B'}};});
+wfCreditOrgs(rows).forEach(o=>{const r=grp('외상 청구 → '+o,rows.filter(r=>r.credit_org===o),o);r.getCell(1).font={bold:true};r.getCell(6).font={bold:true,color:{argb:'FFC9A24B'}};});
   const un=rows.filter(r=>!r.credit_org&&(+r.credit_amt||0)>0);if(un.length){const r=grp('외상 귀속 미정 (확인 필요)',un,'');r.eachCell(c=>c.font={color:{argb:'FFD45656'},bold:true});}
   s.addRow([]);const tr=grp('합계',rows,'');tr.eachCell({includeEmpty:true},c=>{c.font={bold:true};c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFE7F0F8'}};});
   ['이용구분별','크루즈 승선','굿즈샵','선내매점'].forEach((u,i)=>{if(i===0){s.addRow([]);const h=s.addRow([u]);h.getCell(1).font={bold:true};return;}grp(u,rows.filter(r=>r.use_type===u),'');});
   s.columns=[{width:30},{width:8},{width:8},{width:13},{width:13},{width:13},{width:13}];
   s.addRow([]);s.addRow([`※ 이용금액은 매표·POS 기록 기준 입력값. 취소 건 제외. 미입력(접수) 건 ${rows.filter(r=>r.amount==null).length}건 포함 — 금액 입력 후 재출력 권장. 출력 ${fmtTs(new Date().toISOString())}`]).getCell(1).font={size:10,color:{argb:'FF64748B'}};
-  // 2) 대장 A/B/C
-  WF_LEDGERS.forEach(L=>{const ws=wb.addWorksheet('대장'+L+'_'+wfLedgerName[L].slice(2));head(ws,LCOLS);const arr=rows.filter(r=>r.ledger===L);arr.forEach(r=>ws.addRow({...r,pax:r.pax??null,amount:r.amount??null,self_pay:r.self_pay??null,credit_amt:r.credit_amt??null,credit_org:r.credit_org||'',note:r.note||''}));body(ws,arr);});
+  // 2) 청구처별 시트
+  wfCreditOrgs(rows).forEach(o=>{const ws=wb.addWorksheet(('청구_'+o).replace(/[\\\/\?\*\[\]:]/g,'').slice(0,31));head(ws,LCOLS);const arr=rows.filter(r=>r.credit_org===o);arr.forEach(r=>ws.addRow({...r,pax:r.pax??null,amount:r.amount??null,self_pay:r.self_pay??null,credit_amt:r.credit_amt??null,credit_org:r.credit_org||'',note:r.note||''}));body(ws,arr);});
   // 3) 전체
-  const all=wb.addWorksheet('전체');head(all,[{h:'대장',k:'ledger',w:6},...LCOLS,{h:'입력자',k:'entered_by',w:9},{h:'등록시각',k:'submitted_at',w:17}]);rows.forEach(r=>all.addRow({...r,submitted_at:fmtTs(r.submitted_at),credit_org:r.credit_org||'',note:r.note||''}));body(all,null);
+  const all=wb.addWorksheet('전체');head(all,[...LCOLS,{h:'입력자',k:'entered_by',w:9},{h:'등록시각',k:'submitted_at',w:17}]);rows.forEach(r=>all.addRow({...r,submitted_at:fmtTs(r.submitted_at),credit_org:r.credit_org||'',note:r.note||''}));body(all,null);
   await download(wb,`임직원할인_대장_${from.replace(/-/g,'').slice(2)}-${to.replace(/-/g,'').slice(2)}.xlsx`);}
 $('#wfLoad').onclick=wfLoad;$('#wfXlsx').onclick=wfExcel;
 $('#wfToday').onclick=()=>{$('#wfFrom').value=$('#wfTo').value=today();wfLoad();};
