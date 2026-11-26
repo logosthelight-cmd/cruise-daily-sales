@@ -73,24 +73,12 @@ label.chk input{width:22px;height:22px;margin:1px 0 0;flex:none;accent-color:var
     <h1>임직원 할인 이용 등록</h1>
     <div class="sub">명함을 매표 직원에게 보여주신 뒤, 아래 내용을 입력하고 완료 화면을 제시해 주세요. (약 30초)</div>
 
-    <h2 style="margin-top:14px">개인정보 수집·이용 및 제3자 제공 동의</h2>
-    <div class="consent">
-      <p>천원단지 임직원 할인 적용을 위해 아래와 같이 개인정보를 수집·이용합니다.</p>
-      <ul>
-        <li><b>수집 항목</b>: 명함상 소속기관, 명함상 성명, 본인과의 관계(본인/가족/지인/기타), 이용구분, 탑승 인원(크루즈 승선 시)</li>
-        <li><b>수집 목적</b>: 임직원 할인 적용, 이용내역 관리 및 소속기관 외상 청구·정산</li>
-        <li><b>보유 기간</b>: 청구·정산 완료 후 회계처리 기준에 따른 기간까지 보관 후 파기</li>
-        <li><b>제3자 제공</b>: 외상 청구·정산을 위해 이용내역(소속기관, 성명, 이용금액)을 해당 소속기관(청구처)에 제공합니다</li>
-      </ul>
-      <p class="refuse">동의를 거부할 수 있으나, 거부 시 임직원 할인 적용이 어렵습니다.</p>
-    </div>
-    <label class="chk"><input type="checkbox" id="consent" required><span>위 내용을 확인하였으며 동의합니다 <em style="color:var(--red);font-style:normal">(필수)</em></span></label>
 
     <div class="f"><span>1. 명함상 소속기관 <em>*</em></span>
-      <select id="orgSel"><option value="">선택해 주세요</option><option>HJ천주천보수련원</option><option>효정글로벌통일재단</option><option value="기타">기타 (직접 입력)</option></select>
+      <select id="orgSel"><option>HJ천주천보수련원</option><option selected>효정글로벌통일재단</option><option value="기타">기타 (직접 입력)</option></select>
       <input type="text" id="orgOther" placeholder="명함에 적힌 소속기관명을 입력해 주세요" maxlength="60" enterkeyhint="next" hidden style="margin-top:8px">
     </div>
-    <label class="f"><span>2. 명함상 성명 <em>*</em></span><input type="text" id="name" placeholder="명함에 적힌 이름" maxlength="30" enterkeyhint="done"></label>
+    <label class="f"><span>2. 명함상 성명 <em>*</em></span><input type="text" id="name" placeholder="예) 홍길동" maxlength="30" enterkeyhint="done"></label>
 
     <div class="f"><span>3. 본인과의 관계 <em>*</em></span>
       <div class="seg" id="rel">
@@ -115,6 +103,7 @@ label.chk input{width:22px;height:22px;margin:1px 0 0;flex:none;accent-color:var
       <div class="hint">본인부담은 1인당 2,000원으로 계산됩니다. 가족·지인만 탑승하는 경우 그 인원을 적어 주세요.</div>
     </div>
 
+    <label class="chk" style="margin-top:18px"><input type="checkbox" id="consent" required><span>개인정보 수집·이용 및 제3자 제공에 동의합니다 <em style="color:var(--red);font-style:normal">(필수)</em></span></label>
     <div class="hp" aria-hidden="true"><label>website<input type="text" id="website" tabindex="-1" autocomplete="off"></label></div>
     <div class="err" id="err"></div>
     <button class="btn" type="submit" id="btnSubmit">등록하기</button>
@@ -145,13 +134,11 @@ label.chk input{width:22px;height:22px;margin:1px 0 0;flex:none;accent-color:var
   var LS={get:function(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set:function(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
   var frm=$('#frm'),err=$('#err'),btn=$('#btnSubmit');
   var dev=LS.get('wfDev');if(!dev){dev=(window.crypto&&crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random())).slice(0,32);LS.set('wfDev',dev);}
-  // 같은 폰에서 다시 들어오면 소속·성명만 미리 채움 (편의용, 수정 가능)
+  // 소속기관 기본값: 효정글로벌통일재단 (기타 선택 시 직접 입력)
   var orgSel=$('#orgSel'),orgOther=$('#orgOther');
   function syncOrg(){orgOther.hidden=orgSel.value!=='기타';if(!orgOther.hidden)setTimeout(function(){orgOther.focus();},50);}
   orgSel.addEventListener('change',syncOrg);
   function orgVal(){return orgSel.value==='기타'?orgOther.value.trim():orgSel.value;}
-  var last=LS.get('wfLast');if(last){$('#name').value=last.name||'';
-    if(last.org){var opt=[].slice.call(orgSel.options).some(function(o){return o.value===last.org;});if(opt){orgSel.value=last.org;}else{orgSel.value='기타';orgOther.value=last.org;}}}
   syncOrg();
   // URL 파라미터 ?use=굿즈샵 로 이용구분 미리 선택 (매장별 QR 쓸 때)
   try{var p=new URLSearchParams(location.search).get('use');if(p){var r=document.querySelector('#use input[value="'+p+'"]');if(r)r.checked=true;}}catch(e){}
@@ -185,7 +172,6 @@ label.chk input{width:22px;height:22px;margin:1px 0 0;flex:none;accent-color:var
       .then(function(r){return r.json().catch(function(){throw new Error('서버 응답 오류 '+r.status)})})
       .then(function(j){
         if(!j.ok)throw new Error(j.error||'등록 실패');
-        LS.set('wfLast',{org:body.org_name,name:body.staff_name});
         $('#rNo').textContent=j.receipt_no||'';$('#rTime').textContent=fmtTs(j.submitted_at||new Date().toISOString());
         $('#rOrg').textContent=body.org_name;$('#rName').textContent=body.staff_name;$('#rRel').textContent=body.relation;$('#rUse').textContent=body.use_type+(body.pax?' · '+body.pax+'명':'');
         frm.hidden=true;$('#done').hidden=false;window.scrollTo(0,0);
